@@ -6,6 +6,31 @@ const router = express.Router();
 const connection = require('../db');
 const passport = require('passport');
 
+//if user admin
+//http://localhost:5000/users/onlineusers
+
+// router.get(
+//   '/isadmin',
+//   passport.authenticate('jwt', { session: false }),
+//   (req, resp) => {
+//     let sql =
+//       'SELECT idgasi, name, fonction FROM User INNER JOIN Fonction ON User.fonction_id = Fonction.id_fonction WHERE User.isOnline = 1';
+
+//     connection.query(sql, (err, results) => {
+//       if (err) {
+//         resp.status(500).send('Internal server error');
+//       } else {
+//         if (!results.length) {
+//           resp.status(404).send('datas not found');
+//         } else {
+//           resp.json(results);
+//         }
+//       }
+//     });
+//   },
+// );
+
+
 //count online users - navbar
 //http://localhost:5000/users/onlineusers
 

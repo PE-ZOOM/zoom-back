@@ -38,7 +38,7 @@ sql+=' FROM ('
 
     //DR Admin
      //http://localhost:3000/jalons
-
+     console.log(req.query.dc_structureprincipalede)
     //Conseiller
      //http://localhost:3000/jalons?dc_dernieragentreferent=P000617
     if (req.query.dc_dernieragentreferent) {

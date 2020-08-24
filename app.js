@@ -1,6 +1,7 @@
 // dotenv loads parameters (port and database config) from .env
 require('dotenv').config();
 const express = require('express');
+// const path = require('path');
 const bodyParser = require('body-parser');
 const { check, validationResult } = require('express-validator');
 const connection = require('./db');
@@ -10,6 +11,10 @@ const teamRouter = require('./routes/team.route');
 const apeRouter = require('./routes/ape.route');
 const puserRouter = require('./routes/pusers.route');
 const loadRouter = require('./routes/load.route');
+
+const dashboardRouter = require('./routes/dashboard.route');
+const adminRouter = require('./routes/admin.route');
+
 const jalonRouter = require('./routes/jalons.route');
 const authRouter = require('./routes/auth/auth');
 const countRouter = require('./routes/count.route');
@@ -81,6 +86,7 @@ passport.use(
 // Application middleware to ensure all the data received is converted to json
 // app.use(express.json());
 
+// app.use(express.static(path.join(__dirname, '../zoom/build')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -105,8 +111,15 @@ connection.connect((err) => {
 });
 
 //routes
+  // app.get('/', (res,req)=>{
+  //   res.sendFile(path.join(__dirname,'../zoom/build/index.html'));
+  // })
 // signin signup
 app.use('/auth', authRouter);
+
+
+
+app.use('/dashboard', dashboardRouter);
 
 //list for dropdown register and update profile
 app.use('/fonctions', fonctionRouter);
@@ -119,6 +132,7 @@ app.use('/count', countRouter);
 
 //administration load files test
 app.use('/load', loadRouter);
+app.use('/admin', loadRouter);
 
 //jalons
 app.use('/jalons', jalonRouter);
@@ -147,9 +161,10 @@ app.use('/activitexlsx', activiteExcel)
 
 //route 'Not Found'
 app.use(function (req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+  // var err = new Error('Not Found');
+  // err.status = 404;
+  // next(err);
+  res.redirect('/');
 });
 
 app.listen(process.env.PORT || 5000, (err) => {

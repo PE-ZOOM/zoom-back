@@ -26,8 +26,7 @@ router.get('/listesituationde', passport.authenticate('jwt', { session:  false }
             } 
             sqlValues.push(query[key]) 
         })
-        
-        console.log(sql)
+
     connection.query(sql, sqlValues, (err, results) => {
         if (err) {
             resp.status(500).send('Internal server error')
@@ -35,7 +34,6 @@ router.get('/listesituationde', passport.authenticate('jwt', { session:  false }
             if (!results.length) {
                 resp.status(404).send('datas not found')
             } else {
-                // console.log(json(results))
                 resp.json(results)
             }
         }
@@ -70,7 +68,6 @@ router.get('/listeparcours', passport.authenticate('jwt', { session:  false }), 
             if (!results.length) {
                 resp.status(404).send('datas not found')
             } else {
-                // console.log(json(results))
                 resp.json(results)
             }
         }
@@ -85,7 +82,7 @@ router.get('/listecategorie', passport.authenticate('jwt', { session:  false }),
     const query = req.query;
  
     let sql = 'SELECT DISTINCT dc_categorie'
-        sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+        sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape ORDER BY dc_categorie'
         
         let sqlValues = [];
 
@@ -106,7 +103,6 @@ router.get('/listecategorie', passport.authenticate('jwt', { session:  false }),
             if (!results.length) {
                 resp.status(404).send('datas not found')
             } else {
-                // console.log(json(results))
                 resp.json(results)
             }
         }
@@ -141,7 +137,6 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
             if (!results.length) {
                 resp.status(404).send('datas not found')
             } else {
-                // console.log(json(results))
                 resp.json(results)
             }
         }
@@ -183,6 +178,89 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
 //         }
 //     })
 // })
+// SELECT COUNT(dc_formacode_id ), dc_formacode_id, dc_lblformacode FROM T_EFO GROUP BY dc_formacode_id ORDER BY COUNT(dc_formacode_id ) DESC LIMIT 8
+
+  router.get('/listeFormationDemandee', (req, res) => {
+    const query = req.query;
+    let sql = 'SELECT COUNT(dc_formacode_id ) as Qte, dc_lblformacode'
+        sql+= ' FROM T_EFO'
+        
+    // let sqlValues = [];
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        sql += ` WHERE ${key} = "${query[key]}"`
+    })
+
+    sql += ' GROUP BY dc_formacode_id ORDER BY COUNT(dc_formacode_id ) DESC LIMIT 5'
+    
+    connection.query(sql, (err, results) => {
+    // connection.query('SELECT COUNT(dc_formacode_id ) as Qte, dc_lblformacode FROM T_EFO WHERE dc_statutaction_id = "O" GROUP BY dc_formacode_id ORDER BY COUNT(dc_formacode_id ) DESC LIMIT 5', (err, results) => {
+        if (err) {
+            res.status(500).json({
+                error: err.message,
+                sql: err.sql,
+            });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+  router.get('/EFO_c_o', (req, res) => {
+
+    const query = req.query;
+    let sql  = `SELECT COUNT(dc_statutaction_id) as Qte, dc_statutaction_id FROM T_EFO` 
+        sql += ` INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape` 
+
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        if (index === 0) {
+            sql += ` WHERE ${key} = "${query[key]}" `
+        }else{
+            sql += ` AND ${key} = "${query[key]}"`
+        }
+    })
+    
+    sql += ` GROUP BY dc_statutaction_id`
+    connection.query(sql, (err, results) => {
+      if (err) {
+        res.status(500).json({
+          error: err.message,
+          sql: err.sql,
+        });
+      } else {
+        res.json(results);
+      }
+    });
+  });
+
+router.get('/EFO_byDate', (req, res) => {
+
+    const query = req.query;
+    let sql = `SELECT COUNT(dd_datepreconisation ) as Qte, dc_statutaction_id FROM T_EFO WHERE` 
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        if(key !=='soon'){
+            if (index === 0) {
+                sql += ` ${key} = "${query[key]}" AND `
+            }else{
+                sql += ` ${key} = "${query[key]}" AND`
+            }
+        }
+    })
+    // sql += ' DATEDIFF(CURDATE(), dd_datepreconisation) > 800'
+    sql += ` DATEDIFF(CURDATE(), dd_datepreconisation) > 365`
+
+    // sql += ' GROUP BY dc_formacode_id ORDER BY COUNT(dc_formacode_id ) DESC LIMIT 5'
+    
+    connection.query(sql, (err, results) => {
+      if (err) {
+        res.status(500).json({
+          error: err.message,
+          sql: err.sql,
+        });
+      } else {
+        res.json(results);
+      }
+    });
+  });
 
 //nb efo
 //http://localhost:5000/efo?
@@ -286,10 +364,7 @@ router.get('/', passport.authenticate('jwt', { session:  false }), (req,resp) =>
     })
 
     sql+= " Group by x.nbDEEFO,y.nbDE"
-
-    // console.log(sql)
-    // console.log(sqlValues)
-    // console.log(query)
+    console.log(sql)
     connection.query(sql, sqlValues, (err, results) => {
         if (err) {
             resp.status(500).send('Internal server error')
@@ -298,7 +373,6 @@ router.get('/', passport.authenticate('jwt', { session:  false }), (req,resp) =>
                 // resp.status(404).send('datas not found')
                 resp.json([])
             } else {
-                // console.log(json(results))
                 resp.json(results)
             }
         }

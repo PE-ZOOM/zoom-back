@@ -10,7 +10,7 @@ const passport = require('passport');
 router.get('/listestructure', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
     const query = req.query;
  
-    let sql = 'SELECT DISTINCT dc_structureprincipalesuivi'
+    let sql = 'SELECT DISTINCT dc_structureprincipalesuivi, APE.libelle_ape'
         sql+= ' FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape'
         
         let sqlValues = [];
@@ -25,7 +25,7 @@ router.get('/listestructure', passport.authenticate('jwt', { session:  false }),
             } 
             sqlValues.push(query[key]) 
         })
-        
+    sql+= " ORDER BY libelle_ape"
     connection.query(sql, sqlValues, (err, results) => {
         if (err) {
             resp.status(500).send('Internal server error')
@@ -157,6 +157,91 @@ router.get('/contacts', passport.authenticate('jwt', { session:  false }), (req,
     })
 })
 //END
+//contactsEntrant
+//http://localhost:5000/activites/contactsEntrant?
+router.get('/contactsEntrant', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+    const query = req.query;
+   
+
+    let sql ="SELECT annee , mois , Sum(contacts_tel_entrant) AS Tel, Sum(contacts_mail_entrant) AS Mail, Sum(contacts_internet_entrant) AS Internet,"
+    sql+= " Sum(mailnet_entrant) as MailNet, sum(contact_entrant) as contacts"
+    sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    
+    let sqlValues = [];
+    
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        
+                if (index === 0) {
+                    sql += ` WHERE ${key} = ?`
+                }
+                else {
+                    sql += ` AND ${key} = ?`
+        
+                } 
+            
+            sqlValues.push(query[key])
+        })
+    
+    sql+= " GROUP BY annee, mois order by annee, mois desc"
+    
+    connection.query(sql, sqlValues, (err, results) => {
+        if (err) {
+            resp.status(500).send('Internal server error')
+        } else {
+            if (!results.length || results===undefined) {
+                // resp.status(404).send('datas not found')
+                resp.json([])
+            } else {
+                // console.log(json(results))
+                resp.json(results)
+            }
+        }
+    })
+})
+//END
+//contactsSortant
+//http://localhost:5000/activites/contactsEntrant?
+router.get('/contactsSortant', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+    const query = req.query;
+
+    let sql ="SELECT annee , mois , Sum(contacts_tel_sortant) AS Tel, Sum(contacts_mail_sortant) AS Mail, Sum(contacts_internet_sortant) AS Internet,"
+    sql+= " Sum(mailnet_sortant) as MailNet, sum(contact_sortant) as contacts"
+    sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    
+    let sqlValues = [];
+    
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+                
+                if (index === 0) {
+                    sql += ` WHERE ${key} = ?`
+                }
+                else {
+                    sql += ` AND ${key} = ?`
+        
+                } 
+            
+            sqlValues.push(query[key])
+        })
+    
+    sql+= " GROUP BY annee, mois order by annee, mois desc"
+    
+    connection.query(sql, sqlValues, (err, results) => {
+        if (err) {
+            resp.status(500).send('Internal server error')
+        } else {
+            if (!results.length || results===undefined) {
+                // resp.status(404).send('datas not found')
+                resp.json([])
+            } else {
+                // console.log(json(results))
+                resp.json(results)
+            }
+        }
+    })
+})
+//END
+
+
 
 //presta
 //http://localhost:5000/activites/presta?
