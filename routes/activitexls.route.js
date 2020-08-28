@@ -32,7 +32,6 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
     
     sql+= " GROUP BY annee, mois, dc_agentreferent order by annee, mois, dc_agentreferent desc"
     
-    console.log(sql)
     connection.query(sql, sqlValues, (err, results) => {
                 if (err) {
                     resp.status(500).send('Internal server error')
@@ -129,7 +128,6 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
     
     sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee, mois, dc_structureprincipalesuivi desc"
     
-    console.log(sql)
     connection.query(sql, sqlValues, (err, results) => {
                 if (err) {
                     resp.status(500).send('Internal server error')
@@ -227,7 +225,6 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
     
     sql+= " GROUP BY annee, mois, dc_agentreferent order by annee, mois, dc_agentreferent desc"
     
-    console.log(sql)
     connection.query(sql, sqlValues, (err, results) => {
                 if (err) {
                     resp.status(500).send('Internal server error')
@@ -322,7 +319,6 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
     
     sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee, mois, dc_structureprincipalesuivi desc"
     
-    console.log(sql)
     connection.query(sql, sqlValues, (err, results) => {
                 if (err) {
                     resp.status(500).send('Internal server error')

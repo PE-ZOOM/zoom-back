@@ -364,7 +364,6 @@ router.get('/', passport.authenticate('jwt', { session:  false }), (req,resp) =>
     })
 
     sql+= " Group by x.nbDEEFO,y.nbDE"
-    console.log(sql)
     connection.query(sql, sqlValues, (err, results) => {
         if (err) {
             resp.status(500).send('Internal server error')

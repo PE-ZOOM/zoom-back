@@ -32,8 +32,6 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
         sqlValues.push(query[key])
     })
 
-    console.log(sql)
-    console.log(sqlValues)
     connection.query(sql, sqlValues, (err, results) => {
                 if (err) {
                     resp.status(500).send('Internal server error')

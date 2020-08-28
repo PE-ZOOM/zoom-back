@@ -13,7 +13,7 @@ const puserRouter = require('./routes/pusers.route');
 const loadRouter = require('./routes/load.route');
 
 const dashboardRouter = require('./routes/dashboard.route');
-const adminRouter = require('./routes/admin.route');
+// const adminRouter = require('./routes/admin.route');
 
 const jalonRouter = require('./routes/jalons.route');
 const authRouter = require('./routes/auth/auth');
@@ -87,8 +87,12 @@ passport.use(
 // app.use(express.json());
 
 // app.use(express.static(path.join(__dirname, '../zoom/build')));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use(bodyParser.json({limit: '100mb'}));
+app.use(bodyParser.urlencoded({limit: '100mb', extended: true}));
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -132,6 +136,7 @@ app.use('/count', countRouter);
 
 //administration load files test
 app.use('/load', loadRouter);
+// app.use('/worker', loadRouter);
 app.use('/admin', loadRouter);
 
 //jalons
@@ -167,6 +172,8 @@ app.use(function (req, res, next) {
   res.redirect('/');
 });
 
+
+
 app.listen(process.env.PORT || 5000, (err) => {
   if (err) {
     throw new Error('Something bad happened...');
@@ -174,3 +181,5 @@ app.listen(process.env.PORT || 5000, (err) => {
 
   console.log(`Server is listening on ${process.env.PORT}`);
 });
+
+
