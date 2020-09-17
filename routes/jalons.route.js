@@ -4,7 +4,8 @@ const express = require('express');
 // We create the express router 
 const router = express.Router();
 // We require the database connection configuration
-const connection = require('../db');
+// const connection = require('../db');
+const connection_pool = require('../db2');
 const passport = require('passport');
 
     
@@ -61,20 +62,48 @@ sql+=' FROM ('
     sql += ' GROUP BY x.dc_lblmotifjalonpersonnalise'
     
    
-    connection.query(sql, [fieldValue], (err, results) => {
-        if (err) {
-            resp.status(500).json({
-              error: err.message,
-              sql: err.sql,
-            });}
-         else {
-            if (!results.length) {
+    // connection.query(sql, [fieldValue], (err, results) => {
+    //     if (err) {
+    //         resp.status(500).json({
+    //           error: err.message,
+    //           sql: err.sql,
+    //         });}
+    //      else {
+    //         if (!results.length) {
+    //             resp.status(404).send('datas not found')
+    //         } else {
+    //             resp.json(results)
+    //         }
+    //     }
+    // })
+
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, [fieldValue], (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+            if (!result.length) {
                 resp.status(404).send('datas not found')
             } else {
-                resp.json(results)
+                resp.json(result)
             }
         }
-    })
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });
 })
 
 

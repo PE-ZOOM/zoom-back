@@ -39,10 +39,10 @@ router.get(
   passport.authenticate('jwt', { session: false }),
   (req, resp) => {
     let sql = 'SELECT COUNT(idgasi) as count FROM User WHERE isOnline = 1';
-
     connection.query(sql, (err, results) => {
       if (err) {
         resp.status(500).send('Internal server error');
+        console.log(err)
       } else {
         if (!results.length) {
           resp.status(404).send('datas not found');

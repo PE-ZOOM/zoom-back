@@ -3,7 +3,10 @@ const express = require('express');
 // We create the express router
 const router = express.Router();
 // We require the database connection configuration
-const connection = require('../db');
+// const connection = require('../db');
+const connection_pool = require('../db2');
+
+
 const passport = require('passport');
 
  //count portefeuille nav
@@ -38,18 +41,44 @@ const passport = require('passport');
     }
 
     // console.log(fieldValue)
-    connection.query(sql, [fieldValue], (err, results) => {
-      if (err) {
-        resp.status(500).send('Internal server error');
-      } else {
-        if (!results.length) {
-          resp.status(404).send('datas not found');
-        } else {
-          // console.log(json(results))
-          resp.json(results);
+
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, [fieldValue], (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
-      }
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
     });
+
+
+    // connection.query(sql, [fieldValue], (err, results) => {
+    //   if (err) {
+    //     resp.status(500).send('Internal server error');
+    //   } else {
+    //     if (!results.length) {
+    //       resp.status(404).send('datas not found');
+    //     } else {
+    //       // console.log(json(results))
+    //       resp.json(results);
+    //     }
+    //   }
+    // });
   },
 );
 //END
@@ -87,17 +116,43 @@ router.get('/efo', passport.authenticate('jwt', { session:  false }), (req,resp)
     }
 
     // console.log(fieldValue)
-    connection.query(sql, [fieldValue], (err, results) => {
-      if (err) {
-        resp.status(500).send('Internal server error');
-      } else {
-        if (!results.length) {
-          resp.status(404).send('datas not found');
-        } else {
-          resp.json(results);
+    // connection.query(sql, [fieldValue], (err, results) => {
+    //   if (err) {
+    //     resp.status(500).send('Internal server error');
+    //   } else {
+    //     if (!results.length) {
+    //       resp.status(404).send('datas not found');
+    //     } else {
+    //       resp.json(results);
+    //     }
+    //   }
+    // });
+
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, [fieldValue], (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
-      }
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
     });
+
+
   },
 );
 //END
@@ -127,18 +182,44 @@ router.get(
 
     sql += ') x , Diag WHERE x.name = Diag.name';
     // console.log(sql)
-    connection.query(sql, sqlValues, (err, results) => {
-      if (err) {
-        resp.status(500).send('Internal server error');
-      } else {
-        if (!results.length) {
-          resp.status(404).send('datas not found');
-        } else {
-          // console.log(json(results))
-          resp.json(results);
+    // connection.query(sql, sqlValues, (err, results) => {
+    //   if (err) {
+    //     resp.status(500).send('Internal server error');
+    //   } else {
+    //     if (!results.length) {
+    //       resp.status(404).send('datas not found');
+    //     } else {
+    //       // console.log(json(results))
+    //       resp.json(results);
+    //     }
+    //   }
+    // });
+
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, sqlValues, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
-      }
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
     });
+
+    
   },
 );
 //END

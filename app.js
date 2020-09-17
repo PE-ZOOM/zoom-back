@@ -1,39 +1,40 @@
 // dotenv loads parameters (port and database config) from .env
 require('dotenv').config();
 const express = require('express');
-// const path = require('path');
+const path = require('path');
 const bodyParser = require('body-parser');
 const { check, validationResult } = require('express-validator');
-const connection = require('./db');
+const connection       = require('./db');
 // Here we import all of the routing files
-const fonctionRouter = require('./routes/fonction.route');
-const teamRouter = require('./routes/team.route');
-const apeRouter = require('./routes/ape.route');
-const puserRouter = require('./routes/pusers.route');
-const loadRouter = require('./routes/load.route');
+const fonctionRouter   = require('./routes/fonction.route');
+const teamRouter       = require('./routes/team.route');
+const apeRouter        = require('./routes/ape.route');
+const puserRouter      = require('./routes/pusers.route');
+const loadRouter       = require('./routes/load.route');
 
-const dashboardRouter = require('./routes/dashboard.route');
+const dashboardRouter  = require('./routes/dashboard.route');
 // const adminRouter = require('./routes/admin.route');
-
-const jalonRouter = require('./routes/jalons.route');
-const authRouter = require('./routes/auth/auth');
-const countRouter = require('./routes/count.route');
-const activiteRouter = require('./routes/activite.route');
-const usersRouter = require('./routes/users.route');
-const diagExcel = require ('./routes/diagxls.route')
-const efoExcel = require ('./routes/efoxls.route')
-const jalonExcel = require ('./routes/jalonxls.route')
-const activiteExcel = require ('./routes/activitexls.route')
-const efoRouter = require('./routes/efo.route');
-const historicRouter = require('./routes/historic.route');
-const LocalStrategy = require('passport-local').Strategy;
-const passport = require('passport');
-const passportJWT = require('passport-jwt');
-const bcrypt = require('bcrypt');
-const app = express();
-const morgan = require('morgan');
-const ExtractJWT = passportJWT.ExtractJwt;
-const JWTStrategy = passportJWT.Strategy;
+const defmXlsRouter    = require('./routes/defmxls.route');
+const defmRouter       = require('./routes/defm.route');
+const jalonRouter      = require('./routes/jalons.route');
+const authRouter       = require('./routes/auth/auth');
+const countRouter      = require('./routes/count.route');
+const activiteRouter   = require('./routes/activite.route');
+const usersRouter      = require('./routes/users.route');
+const diagExcel        = require ('./routes/diagxls.route')
+const efoExcel         = require ('./routes/efoxls.route')
+const jalonExcel       = require ('./routes/jalonxls.route')
+const activiteExcel    = require ('./routes/activitexls.route')
+const efoRouter        = require('./routes/efo.route');
+const historicRouter   = require('./routes/historic.route');
+const LocalStrategy    = require('passport-local').Strategy;
+const passport         = require('passport');
+const passportJWT      = require('passport-jwt');
+const bcrypt           = require('bcrypt');
+const app              = express();
+const morgan           = require('morgan');
+const ExtractJWT       = passportJWT.ExtractJwt;
+const JWTStrategy      = passportJWT.Strategy;
 
 // Responsible for logging the routes
 app.use(morgan('dev'));
@@ -114,7 +115,7 @@ connection.connect((err) => {
   }
 });
 
-//routes
+// routes
   // app.get('/', (res,req)=>{
   //   res.sendFile(path.join(__dirname,'../zoom/build/index.html'));
   // })
@@ -142,6 +143,8 @@ app.use('/admin', loadRouter);
 //jalons
 app.use('/jalons', jalonRouter);
 
+app.use('/defm', defmRouter);
+app.use('/defmxls', defmXlsRouter);
 //efo
 app.use('/efo', efoRouter);
 

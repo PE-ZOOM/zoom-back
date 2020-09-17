@@ -1,8 +1,9 @@
 
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+// const connection = require('../db');
 const passport = require('passport');
+const connection_pool = require('../db2');
 
 //list filter efo
 //liste filter situation DE
@@ -27,17 +28,42 @@ router.get('/listesituationde', passport.authenticate('jwt', { session:  false }
             sqlValues.push(query[key]) 
         })
 
-    connection.query(sql, sqlValues, (err, results) => {
-        if (err) {
-            resp.status(500).send('Internal server error')
-        } else {
-            if (!results.length) {
-                resp.status(404).send('datas not found')
-            } else {
-                resp.json(results)
-            }
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, sqlValues, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
-    })
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });
+
+
+    // connection.query(sql, sqlValues, (err, results) => {
+    //     if (err) {
+    //         resp.status(500).send('Internal server error')
+    //     } else {
+    //         if (!results.length) {
+    //             resp.status(404).send('datas not found')
+    //         } else {
+    //             resp.json(results)
+    //         }
+    //     }
+    // })
 })
 
 //list filter efo
@@ -61,17 +87,29 @@ router.get('/listeparcours', passport.authenticate('jwt', { session:  false }), 
             } 
             sqlValues.push(query[key]) 
         })
-    connection.query(sql, sqlValues, (err, results) => {
-        if (err) {
-            resp.status(500).send('Internal server error')
-        } else {
-            if (!results.length) {
-                resp.status(404).send('datas not found')
-            } else {
-                resp.json(results)
-            }
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, sqlValues, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
-    })
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });
 })
 
 
@@ -96,17 +134,29 @@ router.get('/listecategorie', passport.authenticate('jwt', { session:  false }),
             } 
             sqlValues.push(query[key]) 
         })
-    connection.query(sql, sqlValues, (err, results) => {
-        if (err) {
-            resp.status(500).send('Internal server error')
-        } else {
-            if (!results.length) {
-                resp.status(404).send('datas not found')
-            } else {
-                resp.json(results)
-            }
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, sqlValues, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
-    })
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });
 })
 
 //list filter efo
@@ -130,17 +180,29 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
             } 
             sqlValues.push(query[key]) 
         })
-    connection.query(sql, sqlValues, (err, results) => {
-        if (err) {
-            resp.status(500).send('Internal server error')
-        } else {
-            if (!results.length) {
-                resp.status(404).send('datas not found')
-            } else {
-                resp.json(results)
-            }
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, sqlValues, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
-    })
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });
 })
 
 //list filter efo
@@ -180,7 +242,7 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
 // })
 // SELECT COUNT(dc_formacode_id ), dc_formacode_id, dc_lblformacode FROM T_EFO GROUP BY dc_formacode_id ORDER BY COUNT(dc_formacode_id ) DESC LIMIT 8
 
-  router.get('/listeFormationDemandee', (req, res) => {
+  router.get('/listeFormationDemandee', (req, resp) => {
     const query = req.query;
     let sql = 'SELECT COUNT(dc_formacode_id ) as Qte, dc_lblformacode'
         sql+= ' FROM T_EFO'
@@ -192,20 +254,32 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
 
     sql += ' GROUP BY dc_formacode_id ORDER BY COUNT(dc_formacode_id ) DESC LIMIT 5'
     
-    connection.query(sql, (err, results) => {
-    // connection.query('SELECT COUNT(dc_formacode_id ) as Qte, dc_lblformacode FROM T_EFO WHERE dc_statutaction_id = "O" GROUP BY dc_formacode_id ORDER BY COUNT(dc_formacode_id ) DESC LIMIT 5', (err, results) => {
-        if (err) {
-            res.status(500).json({
-                error: err.message,
-                sql: err.sql,
-            });
-        } else {
-            res.json(results);
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
     });
 });
 
-  router.get('/EFO_c_o', (req, res) => {
+  router.get('/EFO_c_o', (req, resp) => {
 
     const query = req.query;
     let sql  = `SELECT COUNT(dc_statutaction_id) as Qte, dc_statutaction_id FROM T_EFO` 
@@ -220,19 +294,35 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
     })
     
     sql += ` GROUP BY dc_statutaction_id`
-    connection.query(sql, (err, results) => {
-      if (err) {
-        res.status(500).json({
-          error: err.message,
-          sql: err.sql,
-        });
-      } else {
-        res.json(results);
-      }
-    });
+    
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
+        }
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });    
+
+
   });
 
-router.get('/EFO_byDate', (req, res) => {
+router.get('/EFO_byDate', (req, resp) => {
 
     const query = req.query;
     let sql = `SELECT COUNT(dd_datepreconisation ) as Qte, dc_statutaction_id FROM T_EFO WHERE` 
@@ -250,16 +340,30 @@ router.get('/EFO_byDate', (req, res) => {
 
     // sql += ' GROUP BY dc_formacode_id ORDER BY COUNT(dc_formacode_id ) DESC LIMIT 5'
     
-    connection.query(sql, (err, results) => {
-      if (err) {
-        res.status(500).json({
-          error: err.message,
-          sql: err.sql,
-        });
-      } else {
-        res.json(results);
-      }
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
+        }
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
     });
+
   });
 
 //nb efo
@@ -364,18 +468,31 @@ router.get('/', passport.authenticate('jwt', { session:  false }), (req,resp) =>
     })
 
     sql+= " Group by x.nbDEEFO,y.nbDE"
-    connection.query(sql, sqlValues, (err, results) => {
-        if (err) {
-            resp.status(500).send('Internal server error')
-        } else {
-            if (!results.length || results===undefined) {
-                // resp.status(404).send('datas not found')
-                resp.json([])
-            } else {
-                resp.json(results)
-            }
+
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, sqlValues, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
         }
-    })
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });
+    
 })
 //END
 
