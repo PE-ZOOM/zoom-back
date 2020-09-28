@@ -1,11 +1,11 @@
 
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+// const connection = require('../db');
+const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
 // const { response } = require('express');
-
 
 //select excel diag ide
 //http://localhost:5000/diagxlsx/ide?colonne113=O
@@ -25,61 +25,69 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     })
 
     // console.log(sql)
-    connection.query(sql, sqlValues, (err, results) => {
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+                conn.release();
+        
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('IDE',{views: [{showGridLines: false}]});; //creating worksheet
+                        const jsonResult = JSON.parse(JSON.stringify(results));
+                        let workbook = new excel.Workbook(); //creating workbook
+                        let worksheet = workbook.addWorksheet('IDE',{views: [{showGridLines: false}]});; //creating worksheet
+                        
+                        worksheet.columns = [
+                            { header: 'IDE', key: 'dc_individu_local'},
+                            { header: 'APE', key: 'dc_structureprincipalede'},
+                            { header: 'Référent', key: 'dc_dernieragentreferent'},
+                            { header: 'Civilité', key: 'dc_civilite'},
+                            { header: 'Nom', key: 'dc_nom'},
+                            { header: 'Prénom', key: 'dc_prenom'},
+                            { header: 'Catégorie', key: 'dc_categorie'},
+                            { header: 'Situation', key: 'dc_situationde'},
+                            { header: 'Parcours', key: 'dc_parcours'},
+                            { header: 'Mail', key: 'dc_adresseemail'},
+                            { header: 'Tel', key: 'dc_telephone'}
+
+                        ];
+
+                        worksheet.columns.forEach(column => {
+                            column.width = column.header.length < 5 ? 10 : column.header.length + 2
+                          })
+
+                        worksheet.addRows(jsonResult);
+
+                        worksheet.getRow(1).eachCell((cell) => {
+                            cell.font = { bold: true };
+                          });
+                          for (let i =1; i<=worksheet.columns.length;i++){
+                          worksheet.getColumn(i).eachCell((cell) => {
+                            cell.border = {
+                                top: { style: 'thin' }, bottom: { style: 'thin' },
+                              };
+                          });
+                        }
+          
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'diagIde.xlsx');  
+                        return workbook.xlsx.write(resp)
+                        .then(function() {
+                              resp.status(200).end();
+                        });
                 
-                worksheet.columns = [
-                    { header: 'IDE', key: 'dc_individu_local'},
-                    { header: 'APE', key: 'dc_structureprincipalede'},
-                    { header: 'Référent', key: 'dc_dernieragentreferent'},
-                    { header: 'Civilité', key: 'dc_civilite'},
-                    { header: 'Nom', key: 'dc_nom'},
-                    { header: 'Prénom', key: 'dc_prenom'},
-                    { header: 'Catégorie', key: 'dc_categorie'},
-                    { header: 'Situation', key: 'dc_situationde'},
-                    { header: 'Parcours', key: 'dc_parcours'},
-                    { header: 'Mail', key: 'dc_adresseemail'},
-                    { header: 'Tel', key: 'dc_telephone'}
-
-                ];
-
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 2
-                  })
-
-                worksheet.addRows(jsonResult);
-
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
-  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'diagIde.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
 
                     }
                 }
-            })
         })
+
+    });
+})
                 
 
 //END
@@ -142,60 +150,64 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     // console.log(sql)
     // console.log(sqlValues)
-    connection.query(sql, sqlValues, (err, results) => {
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+                conn.release();
+
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]});; //creating worksheet
-                
-                worksheet.columns = [
-                    { header: 'Référent', key: 'dc_dernieragentreferent'},
-                    { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
-                    { header: 'Nombre DE en portefeuille', key: 'nbDE'},
-                    { header: 'Taux', key: 'tx'},
+                        const jsonResult = JSON.parse(JSON.stringify(results));
+                        let workbook = new excel.Workbook(); //creating workbook
+                        let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]});; //creating worksheet
+                        
+                        worksheet.columns = [
+                            { header: 'Référent', key: 'dc_dernieragentreferent'},
+                            { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
+                            { header: 'Nombre DE en portefeuille', key: 'nbDE'},
+                            { header: 'Taux', key: 'tx'},
 
-                ];
+                        ];
 
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 2
-                  })
+                        worksheet.columns.forEach(column => {
+                            column.width = column.header.length < 5 ? 10 : column.header.length + 2
+                          })
 
-                worksheet.addRows(jsonResult);
+                        worksheet.addRows(jsonResult);
 
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
+                        worksheet.getRow(1).eachCell((cell) => {
+                            cell.font = { bold: true };
+                          });
+                          for (let i =1; i<=worksheet.columns.length;i++){
+                          worksheet.getColumn(i).eachCell((cell) => {
+                            cell.border = {
+                                top: { style: 'thin' }, bottom: { style: 'thin' },
+                              };
+                          });
+                        }
 
-                worksheet.getColumn(4).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'diagRef.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
-
+                        worksheet.getColumn(4).eachCell((cell) => {
+                            cell.numFmt = '0.0%';
+                          });
+          
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'diagRef.xlsx');  
+                        return workbook.xlsx.write(resp)
+                        .then(function() {
+                              resp.status(200).end();
+                        });
                     }
                 }
-            })
         })
+    });
                 
-
+})
 //END
 
 //select excel diag ape
@@ -245,59 +257,66 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     // console.log(sql)
     // console.log(sqlValues)
-    connection.query(sql, sqlValues, (err, results) => {
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+                conn.release();
+
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]});; //creating worksheet
-                
-                worksheet.columns = [
-                    { header: 'APE', key: 'dc_structureprincipalede'},
-                    { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
-                    { header: 'Nombre DE en portefeuille', key: 'nbDE'},
-                    { header: 'Taux', key: 'tx'},
+                        const jsonResult = JSON.parse(JSON.stringify(results));
+                        let workbook = new excel.Workbook(); //creating workbook
+                        let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]});; //creating worksheet
+                        
+                        worksheet.columns = [
+                            { header: 'APE', key: 'dc_structureprincipalede'},
+                            { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
+                            { header: 'Nombre DE en portefeuille', key: 'nbDE'},
+                            { header: 'Taux', key: 'tx'},
 
-                ];
+                        ];
 
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 2
-                  })
+                        worksheet.columns.forEach(column => {
+                            column.width = column.header.length < 5 ? 10 : column.header.length + 2
+                          })
 
-                worksheet.addRows(jsonResult);
+                        worksheet.addRows(jsonResult);
 
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
+                        worksheet.getRow(1).eachCell((cell) => {
+                            cell.font = { bold: true };
+                          });
+                          for (let i =1; i<=worksheet.columns.length;i++){
+                          worksheet.getColumn(i).eachCell((cell) => {
+                            cell.border = {
+                                top: { style: 'thin' }, bottom: { style: 'thin' },
+                              };
+                          });
+                        }
 
-                worksheet.getColumn(4).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'diagApe.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
+                        worksheet.getColumn(4).eachCell((cell) => {
+                            cell.numFmt = '0.0%';
+                          });
+          
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'diagApe.xlsx');  
+                        return workbook.xlsx.write(resp)
+                        .then(function() {
+                              resp.status(200).end();
+                        });
         
 
                     }
                 }
-            })
         })
-                
+    });
+})          
 
 //END
 
