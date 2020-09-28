@@ -1,7 +1,8 @@
 
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+// const connection = require('../db');
+const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
 // const { response } = require('express');
@@ -20,7 +21,7 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     let sqlValues = [];
     
-      Object.keys(req.query).map((key)=>{
+    Object.keys(req.query).map((key)=>{
     if(req.query[key]!==''){
       sql += ') AND (';
       if(key=='nbjourinscrip'){ // SI NB JOURS INSCRIPT
@@ -61,13 +62,19 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     }
   });
   sql +=    ') ';
-    connection.query(sql, (err, results) => {
+
+  connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, (err, results) => {
+
+        conn.release();
+
         if (err) {
-
-
-    console.log(err)
             resp.status(500).send('Internal server error')
-        } else {
+        } 
+        else 
+        {
             if (!results.length) {
                 resp.status(404).send('datas not found')
             } else {
@@ -89,37 +96,37 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                     { header: 'Mail', key: 'dc_adresseemail'},
                     { header: 'Tel', key: 'dc_telephone'},
                     { header: 'Aciennete Inscription', key: 'nbjourinscrip'},
-
                 ];
-
                 worksheet.columns.forEach(column => {
                     column.width = column.header.length < 5 ? 10 : column.header.length + 2
                   })
-
                 worksheet.addRows(jsonResult);
 
                 worksheet.getRow(1).eachCell((cell) => {
                     cell.font = { bold: true };
                   });
                   for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
+                    worksheet.getColumn(i).eachCell((cell) => {
+                      cell.border = {
+                          top: { style: 'thin' }, bottom: { style: 'thin' },
+                        };
+                    });
+                  }
+
+                  resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                  resp.setHeader('Content-Disposition', 'attachment; filename=' + 'defmIde.xlsx'); 
+
+                  return workbook.xlsx.write(resp)
+
+                  .then(function() {
+                      resp.status(200).end();
                   });
-                }
-
-        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'defmIde.xlsx');  
-        return workbook.xlsx.write(resp)
-        .then(function() {
-              resp.status(200).end();
-        });
 
 
-            }
+          }
         }
-    })
+      })
+  });
 })
                 
 
@@ -200,57 +207,67 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         
         sql+=' GROUP BY p2.dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
 
-    connection.query(sql, sqlValues, (err, results) => {
-        if (err) {
-            resp.status(500).send('Internal server error')
-        } else {
-            if (!results.length) {
-                resp.status(404).send('datas not found')
-            } else {
-        const jsonResult = JSON.parse(JSON.stringify(results));
-        let workbook = new excel.Workbook(); //creating workbook
-        let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]});; //creating worksheet
-        
-        worksheet.columns = [
-            { header: 'Référent', key: 'dc_dernieragentreferent'},
-            { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
-            { header: 'Nombre DE en portefeuille', key: 'nbDE'},
-            { header: 'Taux', key: 'tx'},
-
-        ];
-
-        worksheet.columns.forEach(column => {
-            column.width = column.header.length < 5 ? 10 : column.header.length + 2
-          })
-
-        worksheet.addRows(jsonResult);
-
-        worksheet.getRow(1).eachCell((cell) => {
-            cell.font = { bold: true };
-          });
-          for (let i =1; i<=worksheet.columns.length;i++){
-          worksheet.getColumn(i).eachCell((cell) => {
-            cell.border = {
-                top: { style: 'thin' }, bottom: { style: 'thin' },
-              };
-          });
-        }
-
-        worksheet.getColumn(4).eachCell((cell) => {
-            cell.numFmt = '0.0%';
-          });
-
-        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'defmRef.xlsx');  
-        return workbook.xlsx.write(resp)
-        .then(function() {
-              resp.status(200).end();
-        });
 
 
-            }
-        }
-    })
+
+
+      connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+          conn.release();
+
+
+          if (err) {
+              resp.status(500).send('Internal server error')
+          } else {
+              if (!results.length) {
+                  resp.status(404).send('datas not found')
+              } else {
+                const jsonResult = JSON.parse(JSON.stringify(results));
+                let workbook = new excel.Workbook(); //creating workbook
+                let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]});; //creating worksheet
+                
+                worksheet.columns = [
+                    { header: 'Référent', key: 'dc_dernieragentreferent'},
+                    { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
+                    { header: 'Nombre DE en portefeuille', key: 'nbDE'},
+                    { header: 'Taux', key: 'tx'},
+
+                ];
+
+                worksheet.columns.forEach(column => {
+                    column.width = column.header.length < 5 ? 10 : column.header.length + 2
+                  })
+
+                worksheet.addRows(jsonResult);
+
+                worksheet.getRow(1).eachCell((cell) => {
+                    cell.font = { bold: true };
+                  });
+                  for (let i =1; i<=worksheet.columns.length;i++){
+                  worksheet.getColumn(i).eachCell((cell) => {
+                    cell.border = {
+                        top: { style: 'thin' }, bottom: { style: 'thin' },
+                      };
+                  });
+                }
+
+                worksheet.getColumn(4).eachCell((cell) => {
+                    cell.numFmt = '0.0%';
+                  });
+
+                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'defmRef.xlsx');  
+                return workbook.xlsx.write(resp)
+                .then(function() {
+                      resp.status(200).end();
+                });
+              }
+          }
+      })
+    });
 })
                 
 
@@ -333,58 +350,64 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     // console.log(sql)
     // console.log(sqlValues)
-    connection.query(sql, sqlValues, (err, results) => {
+      connection_pool.getConnection(function(error, conn) {
+
+          if (error) throw err; // not connected
+          conn.query(sql, sqlValues, (err, results) => {
+              conn.release();
+
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]});; //creating worksheet
-                
-                worksheet.columns = [
-                    { header: 'APE', key: 'dc_structureprincipalede'},
-                    { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
-                    { header: 'Nombre DE en portefeuille', key: 'nbDE'},
-                    { header: 'Taux', key: 'tx'},
+                        const jsonResult = JSON.parse(JSON.stringify(results));
+                        let workbook = new excel.Workbook(); //creating workbook
+                        let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]});; //creating worksheet
+                        
+                        worksheet.columns = [
+                            { header: 'APE', key: 'dc_structureprincipalede'},
+                            { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
+                            { header: 'Nombre DE en portefeuille', key: 'nbDE'},
+                            { header: 'Taux', key: 'tx'},
 
-                ];
+                        ];
 
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 2
-                  })
+                        worksheet.columns.forEach(column => {
+                            column.width = column.header.length < 5 ? 10 : column.header.length + 2
+                          })
 
-                worksheet.addRows(jsonResult);
+                        worksheet.addRows(jsonResult);
 
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
+                        worksheet.getRow(1).eachCell((cell) => {
+                            cell.font = { bold: true };
+                          });
+                          for (let i =1; i<=worksheet.columns.length;i++){
+                          worksheet.getColumn(i).eachCell((cell) => {
+                            cell.border = {
+                                top: { style: 'thin' }, bottom: { style: 'thin' },
+                              };
+                          });
+                        }
 
-                worksheet.getColumn(4).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'defmApe.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
+                        worksheet.getColumn(4).eachCell((cell) => {
+                            cell.numFmt = '0.0%';
+                          });
+          
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'defmApe.xlsx');  
+                        return workbook.xlsx.write(resp)
+                        .then(function() {
+                              resp.status(200).end();
+                        });
         
 
                     }
                 }
             })
-        })
+        });
+    })
                 
 
 //END

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+// const connection = require('../db');
+const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
 
@@ -8,7 +9,6 @@ const excel = require('exceljs');
 //select excel contacts ref
 //http://localhost:5000/activitexlsx/contacts/ref?
 router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (req,resp) => {
-
     const query = req.query;
 
     let sql ="SELECT annee , mois , dc_agentreferent,  Sum(nb_de_affectes) AS nb_de_affectes, Sum(dem_de_trait_phys) AS GOA, Sum(dem_de_trait_tel) AS 'Tel 3949',"
@@ -32,7 +32,14 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
     
     sql+= " GROUP BY annee, mois, dc_agentreferent order by annee, mois, dc_agentreferent desc"
     
-    connection.query(sql, sqlValues, (err, results) => {
+
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+                conn.release();
+
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
@@ -96,7 +103,8 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
                     }
                 }
             })
-        })
+        });
+})
                 
 
 //END
@@ -128,7 +136,14 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
     
     sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee, mois, dc_structureprincipalesuivi desc"
     
-    connection.query(sql, sqlValues, (err, results) => {
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+                conn.release();
+
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
@@ -191,7 +206,8 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
                     }
                 }
             })
-        })
+    });
+})
                 
 
 //END
@@ -225,66 +241,74 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
     
     sql+= " GROUP BY annee, mois, dc_agentreferent order by annee, mois, dc_agentreferent desc"
     
-    connection.query(sql, sqlValues, (err, results) => {
-                if (err) {
-                    resp.status(500).send('Internal server error')
-                } else {
-                    if (!results.length) {
-                        resp.status(404).send('datas not found')
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+                    conn.release();
+
+                    if (err) {
+                        resp.status(500).send('Internal server error')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]}); //creating worksheet
-                
-                worksheet.columns = [
-                    { header: 'Année', key: 'annee'},
-                    { header: 'Mois', key: 'mois'},
-                    { header: 'Référent', key: 'dc_agentreferent'},
-                    { header: 'Nb DE affectes', key: 'nb_de_affectes'},
-                    { header: 'ACTIV_Créa', key: 'ACTIV_Créa'},
-                    { header: 'ACTIV_Emploi', key: 'ACTIV_Emploi'},
-                    { header: 'ACTIV_Projet', key: 'ACTIV_Projet'},
-                    { header: 'Regards_croisés', key: 'Regards_croisés'},
-                    { header: 'Valoriser_son_image_pro', key: 'Valoriser_son_image_pro'},
-                    { header: 'Vers1métier', key: 'Vers1métier'},
-                    { header: 'Presta', key: 'Presta'},
-                    { header: 'Tx prestation', key: 'tx_prestation'}                
-                ];
+                        if (!results.length) {
+                            resp.status(404).send('datas not found')
+                        } else {
+                    const jsonResult = JSON.parse(JSON.stringify(results));
+                    let workbook = new excel.Workbook(); //creating workbook
+                    let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]}); //creating worksheet
+                    
+                    worksheet.columns = [
+                        { header: 'Année', key: 'annee'},
+                        { header: 'Mois', key: 'mois'},
+                        { header: 'Référent', key: 'dc_agentreferent'},
+                        { header: 'Nb DE affectes', key: 'nb_de_affectes'},
+                        { header: 'ACTIV_Créa', key: 'ACTIV_Créa'},
+                        { header: 'ACTIV_Emploi', key: 'ACTIV_Emploi'},
+                        { header: 'ACTIV_Projet', key: 'ACTIV_Projet'},
+                        { header: 'Regards_croisés', key: 'Regards_croisés'},
+                        { header: 'Valoriser_son_image_pro', key: 'Valoriser_son_image_pro'},
+                        { header: 'Vers1métier', key: 'Vers1métier'},
+                        { header: 'Presta', key: 'Presta'},
+                        { header: 'Tx prestation', key: 'tx_prestation'}                
+                    ];
 
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 4
-                  })
+                    worksheet.columns.forEach(column => {
+                        column.width = column.header.length < 5 ? 10 : column.header.length + 4
+                      })
 
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
-
-                worksheet.getColumn(12).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-               
-  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'prestaREF.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
-
+                    worksheet.addRows(jsonResult);
+                    
+                    worksheet.getRow(1).eachCell((cell) => {
+                        cell.font = { bold: true };
+                      });
+                      for (let i =1; i<=worksheet.columns.length;i++){
+                      worksheet.getColumn(i).eachCell((cell) => {
+                        cell.border = {
+                            top: { style: 'thin' }, bottom: { style: 'thin' },
+                          };
+                      });
                     }
-                }
+
+                    worksheet.getColumn(12).eachCell((cell) => {
+                        cell.numFmt = '0.0%';
+                      });
+                   
+      
+                    resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    resp.setHeader('Content-Disposition', 'attachment; filename=' + 'prestaREF.xlsx');  
+                    return workbook.xlsx.write(resp)
+                    .then(function() {
+                          resp.status(200).end();
+                    });
+            
+
+                        }
+                    }
             })
-        })
+    });
+})
                 
 
 //END
@@ -319,7 +343,15 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
     
     sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee, mois, dc_structureprincipalesuivi desc"
     
-    connection.query(sql, sqlValues, (err, results) => {
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+
+            conn.query(sql, sqlValues, (err, results) => {
+
+                conn.release()
+
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
@@ -378,7 +410,8 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
                     }
                 }
             })
-        })
+    });
+})
                 
 
 //END

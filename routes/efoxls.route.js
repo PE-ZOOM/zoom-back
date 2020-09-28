@@ -1,7 +1,7 @@
 
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
 
@@ -40,7 +40,11 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     })
 
     // console.log(sql)
-    connection.query(sql, sqlValues, (err, results) => {
+    connection_pool.getConnection(function(error, conn) {
+    if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+            conn.release();
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
@@ -94,8 +98,9 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
         
                     }
                 }
-            })
         })
+    });
+})
 
 //END
 
@@ -103,33 +108,6 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 //http://localhost:5000/efoxlsx/ref?
 router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp) => {
     const query = req.query;
-
-//     Select t3.dc_dernieragentreferent, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,
-//     CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,
-//     nbDEEFO / t3. nbDE  as tx 
-    
-//     FROM
-// (SELECT p1.dc_dernieragentreferent, count(p1.dc_individu_local) as nbEFO
-//  FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape
-//  WHERE p1.dc_structureprincipalede = 97801 and p1.dc_statutaction_id='O'
-//  Group BY p1.dc_dernieragentreferent) as t1 INNER JOIN 
-
-//  (SELECT x.dc_dernieragentreferent, count(x.dc_individu_local) as nbDEEFO
-// FROM 
-//     (SELECT DISTINCT p2.dc_individu_local, p2.dc_dernieragentreferent
-//     FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape
-//     WHERE p2.dc_structureprincipalede = 97801 and p2.dc_statutaction_id='O'
-//     ) x
-//  Group by x.dc_dernieragentreferent 
-//  ) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent
-
-//     RIGHT JOIN 
-//         (SELECT p3.dc_dernieragentreferent, count(p3.dc_individu_local) as nbDE 
-//          FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape
-//          WHERE p3.dc_structureprincipalede = 97801
-//          GROUP BY p3.dc_dernieragentreferent
-//         ) as t3 ON t3.dc_dernieragentreferent=t1.dc_dernieragentreferent 
-
 
     let sql = 'Select t3.dc_dernieragentreferent, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,'
         sql+= ' CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,'
@@ -245,12 +223,15 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
 
    sql+=' GROUP BY p3.dc_dernieragentreferent'
    sql+=') as t3 ON t3.dc_dernieragentreferent=t1.dc_dernieragentreferent' 
-    
 
-    // console.log(sql)
-    // console.log(sqlValues)
-    connection.query(sql, sqlValues, (err, results) => {
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+                conn.release();
+
                 if (err) {
+                    console.log(err)
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
@@ -300,8 +281,9 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         
                     }
                 }
-            })
         })
+    });
+})
                 
 
 //END
@@ -407,7 +389,12 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     // console.log(sql)
     // console.log(sqlValues)
-    connection.query(sql, sqlValues, (err, results) => {
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+            conn.release();
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
@@ -466,9 +453,9 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
 
                     }
                 }
-            })
         })
-                
+    });
+})        
 
 //END
 
