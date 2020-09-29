@@ -338,7 +338,7 @@ router.get('/presta', passport.authenticate('jwt', { session:  false }), (req,re
             sqlValues.push(query[key])
         })
     
-    sql+= " GROUP BY annee, mois order by annee, mois desc"
+    sql+= " GROUP BY annee, mois order by annee desc, mois desc"
 
     console.log(sql)
     
