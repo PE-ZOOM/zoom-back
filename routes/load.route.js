@@ -220,7 +220,7 @@ router.post('/t_activites', passport.authenticate('jwt', { session:  false }), (
                   "`presta_z13`,                `presta_z12`,            `presta_z17`,                  `presta_z02`, "+
                   "`presta_z16`,                `presta_rgc`,            `presta_m03`,                  `presta_m01`, "+
                   "`presta_vsi`,                `presta`,                `formation`,                    `annee`, "+
-                  "`mois`"+
+                  "`mois`,                      `dt`,                    `libelle_ape`";
               ") VALUES ?"
 
   connection_pool.getConnection(function(error, conn) {
