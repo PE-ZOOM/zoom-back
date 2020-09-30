@@ -15,7 +15,8 @@ const passport = require('passport');
 
     let sql = 'SELECT COUNT(dc_individu_local) AS nb';
     sql +=
-      ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape';
+      // ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape';
+      ' FROM T_Portefeuille';
     sql += ' WHERE dc_situationde = 2';
 
     //DR Admin
@@ -91,7 +92,8 @@ router.get('/efo', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     let sql = 'SELECT COUNT(dc_individu_local) AS nb';
     sql +=
-      ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede= APE.id_ape';
+      // ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede= APE.id_ape';
+      ' FROM T_EFO';
 
     //DR Admin
     //http://localhost:5000/count/efo
@@ -170,7 +172,8 @@ router.get(
       Object.keys(query)[0]
     }" as name,COUNT(dc_individu_local) AS nb`;
     sql +=
-      ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape';
+      // ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape';
+      ' FROM T_Portefeuille';
     sql += ' WHERE dc_situationde = 2';
 
     let sqlValues = [];
