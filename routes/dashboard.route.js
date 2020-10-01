@@ -95,6 +95,7 @@ router.get('/jalon', (req, res) => {
 
 });
 
+//a changer
 router.get('/efo', (req, res) => {
   const query = req.query;
 
@@ -104,15 +105,20 @@ router.get('/efo', (req, res) => {
   // Object.keys(query).map((key, index) => {
   //   sql += ` WHERE ${key} = "${query[key]}"  `
   // })
-  Object.keys(query).filter((key) => query[key]!=='all').map((key) => {
+  Object.keys(query).filter((key) => query[key]!=='all').map((key,index) => {
     if(req.query[key]!=="null" && req.query[key]!==undefined)
     {
+
+      if (index===0){
+        sql +=` WHERE ${key} = "${req.query[key]}"`
+      }
+      else {
       sql += ` AND ${key} = "${req.query[key]}" `
       // if(key==='dt'){
       //   sql += ` AND ${key} = "${req.query[key]}" `
       // }
     }
-  })
+  }})
 
 
   sql += ' GROUP BY dc_statutaction_id'
@@ -126,7 +132,7 @@ router.get('/efo', (req, res) => {
 
       // Handle error after the release.
       if (err){
-        console.log(err.sqlMessage)
+        console.log(err.sql)
         return  res.status(500).json({
                 err: "true", 
                 error: err.message,
