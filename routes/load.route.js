@@ -127,7 +127,7 @@ router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false })
 
   let req_arr = Object.values(req.body).map((v) => Object.values(v).map((value) => value===null?0:value));
   // con.query('TRUNCATE TABLE `t_portefeuille`')
-  let sql = "INSERT INTO t_portefeuille ("+
+  let sql = "INSERT INTO T_Portefeuille ("+
                       "`dc_individu_local`,                 `dc_civilite`,              `dc_nom`, "+
                       "`dc_prenom`,                         `dc_categorie`,             `dc_situationde`, "+
                       "`dc_structureprincipalede`,          `dc_dernieragentreferent`,  `dc_parcours`, `dc_lblaxetravailprincipal`,"+
@@ -205,7 +205,7 @@ router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false })
 
 router.post('/t_activites', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
   let req_arr = Object.values(req.body).map((v) => Object.values(v).map((value) => value===null?0:value));
-  let sql = "INSERT INTO t_activites "+
+  let sql = "INSERT INTO T_Activites "+
               "("+
                   "`dc_agentreferent`,         `nom_complet`,           `dc_structureprincipalesuivi`, "+ 
                   "`dc_modalitesuiviaccomp_id`, `nb_de_affectes`,        `contacts_phys`,               `contacts_tel_entrant`, "+

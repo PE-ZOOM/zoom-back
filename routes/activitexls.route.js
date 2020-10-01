@@ -13,7 +13,8 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
 
     let sql ="SELECT annee , mois , dc_agentreferent,  Sum(nb_de_affectes) AS nb_de_affectes, Sum(dem_de_trait_phys) AS GOA, Sum(dem_de_trait_tel) AS 'Tel 3949',"
     sql+= " Sum(entretien_phys) as entretien_phys, sum(entretien_tel) as entretien_tel, sum(entretien_mail) as entretien_mail, sum(entretien_dmc) as entretien_dmc, sum(mailnet_entrant) as mailnet_entrant, sum(mailnet_sortant) as mailnet_sortant,sum(contact_entrant) / sum(nb_de_affectes) as tx_contact_entrant, sum(contact_sortant) / Sum(nb_de_affectes) as tx_contact_sortant"
-    sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    sql+=" FROM T_Activites"
     
     let sqlValues = [];
     
@@ -117,7 +118,8 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
 
     let sql ="SELECT annee , mois , dc_structureprincipalesuivi, Sum(nb_de_affectes) AS nb_de_affectes, Sum(dem_de_trait_phys) AS GOA, Sum(dem_de_trait_tel) AS 'Tel 3949',"
     sql+= " Sum(entretien_phys) as entretien_phys, sum(entretien_tel) as entretien_tel, sum(entretien_mail) as entretien_mail, sum(entretien_dmc) as entretien_dmc, sum(mailnet_entrant) as mailnet_entrant, sum(mailnet_sortant) as mailnet_sortant,sum(contact_entrant) / sum(nb_de_affectes) as tx_contact_entrant, sum(contact_sortant) / Sum(nb_de_affectes) as tx_contact_sortant"
-    sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    sql+=" FROM T_Activites"
     
     let sqlValues = [];
     
@@ -222,7 +224,8 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
     sql+= " Sum(nb_de_affectes) AS nb_de_affectes, Sum(presta_rca) AS ACTIV_Créa, Sum(presta_aem) AS ACTIV_Emploi," 
     sql += " Sum(presta_acp) AS ACTIV_Projet, Sum(presta_rgc) AS Regards_croisés, Sum(presta_vsi) AS Valoriser_son_image_pro,"
     sql += " Sum(presta_z08+presta_z10+presta_z16) AS Vers1métier, Sum(presta) AS Presta, sum(presta) / Sum(nb_de_affectes) as tx_prestation"
-    sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    sql+=" FROM T_Activites"
     
     let sqlValues = [];
     
@@ -323,7 +326,8 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
     sql+= " Sum(nb_de_affectes) AS nb_de_affectes, Sum(presta_rca) AS ACTIV_Créa, Sum(presta_aem) AS ACTIV_Emploi," 
     sql += " Sum(presta_acp) AS ACTIV_Projet, Sum(presta_rgc) AS Regards_croisés, Sum(presta_vsi) AS Valoriser_son_image_pro,"
     sql += " Sum(presta_z08+presta_z10+presta_z16) AS Vers1métier, Sum(presta) AS Presta, sum(presta) / Sum(nb_de_affectes) as tx_prestation"
-    sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    sql+=" FROM T_Activites"
 
 
     let sqlValues = [];

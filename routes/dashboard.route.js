@@ -53,7 +53,7 @@ router.get('/jalon', (req, res) => {
     sql += '                  COUNT(dc_individu_local) AS nb'
     sql += '           '
     sql += '          FROM T_Portefeuille '
-    sql += '          INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape '
+    // sql += '          INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape '
     sql += '          WHERE dc_situationde = 2 '
 
           Object.keys(query).filter((key) => query[key]!=='all').map((key) => {
@@ -95,24 +95,30 @@ router.get('/jalon', (req, res) => {
 
 });
 
+//a changer
 router.get('/efo', (req, res) => {
   const query = req.query;
 
   let sql = 'SELECT CONCAT("EFO ", dc_statutaction_id)  as lbl, COUNT(dc_statutaction_id) as nb FROM T_EFO'
-    sql += ' INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+    // sql += ' INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
 
   // Object.keys(query).map((key, index) => {
   //   sql += ` WHERE ${key} = "${query[key]}"  `
   // })
-  Object.keys(query).filter((key) => query[key]!=='all').map((key) => {
+  Object.keys(query).filter((key) => query[key]!=='all').map((key,index) => {
     if(req.query[key]!=="null" && req.query[key]!==undefined)
     {
-      sql += ` AND ${key} = "${req.query[key]}" `
-      if(key==='dt'){
-        sql += ` AND ${key} = "${req.query[key]}" `
+
+      if (index===0){
+        sql +=` WHERE ${key} = "${req.query[key]}"`
       }
+      else {
+      sql += ` AND ${key} = "${req.query[key]}" `
+      // if(key==='dt'){
+      //   sql += ` AND ${key} = "${req.query[key]}" `
+      // }
     }
-  })
+  }})
 
 
   sql += ' GROUP BY dc_statutaction_id'
@@ -126,79 +132,7 @@ router.get('/efo', (req, res) => {
 
       // Handle error after the release.
       if (err){
-        console.log(err.sqlMessage)
-        return  res.status(500).json({
-                err: "true", 
-                error: err.message,
-                errno: err.errno,
-                sql: err.sql,
-                });
-      }else{
-        res.status(201).json(result)
-      }
-
-    // Don't use the connection here, it has been returned to the pool.
-    });   
-  });
-});
-
-router.get('/activite', (req, res) => {
-  const query = req.query;
-
-  let sql = 'SELECT "Nb DE sans activités" as lbl, COUNT(*) as nb FROM `t_portefeuille` WHERE nbjoursansentretien > 360 AND nbjoursanscontactsortantteloumel > 360'
-
-  Object.keys(query).map((key, index) => {
-    sql += ` AND ${key} = "${query[key]}"  `
-  })
-
-  // sql += ' GROUP BY dc_statutaction_id'
-
-  connection_pool.getConnection(function(error, conn) {
-    if (error) throw err; // not connected!
-
-    conn.query(sql, (err, result) => {
-    // When done with the connection, release it.
-      conn.release();
-
-      // Handle error after the release.
-      if (err){
-        console.log(err.sqlMessage)
-        return  res.status(500).json({
-                err: "true", 
-                error: err.message,
-                errno: err.errno,
-                sql: err.sql,
-                });
-      }else{
-        res.status(201).json(result)
-      }
-
-    // Don't use the connection here, it has been returned to the pool.
-    });   
-  });
-});
-
-router.get('/ore', (req, res) => {
-  const query = req.query;
-
-  let sql = 'SELECT COUNT(*) as NbORE FROM `t_portefeuille` WHERE nbjoursansentretien > 360 AND nbjoursanscontactsortantteloumel > 360'
-  console.log(query)
-  Object.keys(query).map((key, index) => {
-    sql += ` AND ${key} = "${query[key]}"  `
-  })
-
-  // sql += ' GROUP BY dc_statutaction_id'
-
-  connection_pool.getConnection(function(error, conn) {
-    if (error) throw err; // not connected!
-
-    conn.query(sql, (err, result) => {
-    // When done with the connection, release it.
-      conn.release();
-
-      // Handle error after the release.
-      if (err){
-        console.log(err.sqlMessage)
+        console.log(err.sql)
         return  res.status(500).json({
                 err: "true", 
                 error: err.message,

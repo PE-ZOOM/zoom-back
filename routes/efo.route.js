@@ -8,49 +8,50 @@ const connection_pool = require('../db2');
 //list filter efo
 //liste filter situation DE
 //http://localhost:5000/efo/listesituationde?
-router.get('/listesituationde', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
-    const query = req.query;
+// router.get('/listesituationde', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+//     const query = req.query;
  
-    let sql = 'SELECT DISTINCT dc_situationde, libelle'
-        sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
-        sql+= ' INNER JOIN Modalite ON T_EFO.dc_situationde = Modalite.id_mod'
+//     let sql = 'SELECT DISTINCT dc_situationde, libelle'
+//         // sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+//         sql+= ' FROM T_EFO'
+//         sql+= ' INNER JOIN Modalite ON T_EFO.dc_situationde = Modalite.id_mod'
         
-        let sqlValues = [];
+//         let sqlValues = [];
 
-        Object.keys(query).map((key, index) => {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
-            }
-            else {
-                sql += ` AND ${key} = ?`
+//         Object.keys(query).map((key, index) => {
+//             if (index === 0) {
+//                 sql += ` WHERE ${key} = ?`
+//             }
+//             else {
+//                 sql += ` AND ${key} = ?`
     
-            } 
-            sqlValues.push(query[key]) 
-        })
+//             } 
+//             sqlValues.push(query[key]) 
+//         })
 
-    connection_pool.getConnection(function(error, conn) {
-      if (error) throw err; // not connected!
+//     connection_pool.getConnection(function(error, conn) {
+//       if (error) throw err; // not connected!
 
-      conn.query(sql, sqlValues, (err, result) => {
-      // When done with the connection, release it.
-        conn.release();
+//       conn.query(sql, sqlValues, (err, result) => {
+//       // When done with the connection, release it.
+//         conn.release();
 
-        // Handle error after the release.
-        if (err){
-          console.log(err.sqlMessage)
-          return  resp.status(500).json({
-                  err: "true", 
-                  error: err.message,
-                  errno: err.errno,
-                  sql: err.sql,
-                  });
-        }else{
-          resp.status(201).json(result)
-        }
+//         // Handle error after the release.
+//         if (err){
+//           console.log(err.sqlMessage)
+//           return  resp.status(500).json({
+//                   err: "true", 
+//                   error: err.message,
+//                   errno: err.errno,
+//                   sql: err.sql,
+//                   });
+//         }else{
+//           resp.status(201).json(result)
+//         }
 
       // Don't use the connection here, it has been returned to the pool.
-      });   
-    });
+    //   });   
+    // });
 
 
     // connection.query(sql, sqlValues, (err, results) => {
@@ -64,100 +65,101 @@ router.get('/listesituationde', passport.authenticate('jwt', { session:  false }
     //         }
     //     }
     // })
-})
+// })
 
 //list filter efo
 //liste filter parcours
 //http://localhost:5000/efo/listeparcours?
-router.get('/listeparcours', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
-    const query = req.query;
+// router.get('/listeparcours', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+//     const query = req.query;
  
-    let sql = 'SELECT DISTINCT dc_parcours'
-        sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+//     let sql = 'SELECT DISTINCT dc_parcours'
+//         sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
         
-        let sqlValues = [];
+//         let sqlValues = [];
 
-        Object.keys(query).map((key, index) => {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
-            }
-            else {
-                sql += ` AND ${key} = ?`
+//         Object.keys(query).map((key, index) => {
+//             if (index === 0) {
+//                 sql += ` WHERE ${key} = ?`
+//             }
+//             else {
+//                 sql += ` AND ${key} = ?`
     
-            } 
-            sqlValues.push(query[key]) 
-        })
-    connection_pool.getConnection(function(error, conn) {
-      if (error) throw err; // not connected!
+//             } 
+//             sqlValues.push(query[key]) 
+//         })
+//     connection_pool.getConnection(function(error, conn) {
+//       if (error) throw err; // not connected!
 
-      conn.query(sql, sqlValues, (err, result) => {
-      // When done with the connection, release it.
-        conn.release();
+//       conn.query(sql, sqlValues, (err, result) => {
+//       // When done with the connection, release it.
+//         conn.release();
 
-        // Handle error after the release.
-        if (err){
-          console.log(err.sqlMessage)
-          return  resp.status(500).json({
-                  err: "true", 
-                  error: err.message,
-                  errno: err.errno,
-                  sql: err.sql,
-                  });
-        }else{
-          resp.status(201).json(result)
-        }
+//         // Handle error after the release.
+//         if (err){
+//           console.log(err.sqlMessage)
+//           return  resp.status(500).json({
+//                   err: "true", 
+//                   error: err.message,
+//                   errno: err.errno,
+//                   sql: err.sql,
+//                   });
+//         }else{
+//           resp.status(201).json(result)
+//         }
 
-      // Don't use the connection here, it has been returned to the pool.
-      });   
-    });
-})
+//       // Don't use the connection here, it has been returned to the pool.
+//       });   
+//     });
+// })
 
 
 //list filter efo
 //liste filter categorie
 //http://localhost:5000/efo/listecategorie?
-router.get('/listecategorie', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
-    const query = req.query;
+// router.get('/listecategorie', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+//     const query = req.query;
  
-    let sql = 'SELECT DISTINCT dc_categorie'
-        sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape ORDER BY dc_categorie'
+//     let sql = 'SELECT DISTINCT dc_categorie'
+//         // sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape ORDER BY dc_categorie'
+//         sql+= ' FROM T_EFO ORDER BY dc_categorie'
         
-        let sqlValues = [];
+//         let sqlValues = [];
 
-        Object.keys(query).map((key, index) => {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
-            }
-            else {
-                sql += ` AND ${key} = ?`
+//         Object.keys(query).map((key, index) => {
+//             if (index === 0) {
+//                 sql += ` WHERE ${key} = ?`
+//             }
+//             else {
+//                 sql += ` AND ${key} = ?`
     
-            } 
-            sqlValues.push(query[key]) 
-        })
-    connection_pool.getConnection(function(error, conn) {
-      if (error) throw err; // not connected!
+//             } 
+//             sqlValues.push(query[key]) 
+//         })
+//     connection_pool.getConnection(function(error, conn) {
+//       if (error) throw err; // not connected!
 
-      conn.query(sql, sqlValues, (err, result) => {
-      // When done with the connection, release it.
-        conn.release();
+//       conn.query(sql, sqlValues, (err, result) => {
+//       // When done with the connection, release it.
+//         conn.release();
 
-        // Handle error after the release.
-        if (err){
-          console.log(err.sqlMessage)
-          return  resp.status(500).json({
-                  err: "true", 
-                  error: err.message,
-                  errno: err.errno,
-                  sql: err.sql,
-                  });
-        }else{
-          resp.status(201).json(result)
-        }
+//         // Handle error after the release.
+//         if (err){
+//           console.log(err.sqlMessage)
+//           return  resp.status(500).json({
+//                   err: "true", 
+//                   error: err.message,
+//                   errno: err.errno,
+//                   sql: err.sql,
+//                   });
+//         }else{
+//           resp.status(201).json(result)
+//         }
 
-      // Don't use the connection here, it has been returned to the pool.
-      });   
-    });
-})
+//       // Don't use the connection here, it has been returned to the pool.
+//       });   
+//     });
+// })
 
 //list filter efo
 //liste filter statut action
@@ -166,7 +168,8 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
     const query = req.query;
  
     let sql = 'SELECT DISTINCT dc_statutaction_id'
-        sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+        // sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+        sql+= ' FROM T_EFO'
         
         let sqlValues = [];
 
@@ -283,8 +286,8 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
 
     const query = req.query;
     let sql  = `SELECT COUNT(dc_statutaction_id) as Qte, dc_statutaction_id FROM T_EFO` 
-        sql += ` INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape` 
-
+        // sql += ` INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape` 
+       
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         if (index === 0) {
             sql += ` WHERE ${key} = "${query[key]}" `
@@ -371,10 +374,13 @@ router.get('/EFO_byDate', (req, resp) => {
 router.get('/', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
     const query = req.query;
    
+    // let sql ="SELECT count(t1.dc_individu_local) AS nbEFO, x.nbDEEFO, y.nbDE, CONCAT(FORMAT(x.nbDEEFO / y.nbDE * 100, 1),'%') as tx"
     let sql ="SELECT count(t1.dc_individu_local) AS nbEFO, x.nbDEEFO, y.nbDE, CONCAT(FORMAT(x.nbDEEFO / y.nbDE * 100, 1),'%') as tx"
-    sql+= " FROM T_EFO t1 INNER JOIN APE ON t1.dc_structureprincipalede = APE.id_ape ,"
+    // sql+= " FROM T_EFO t1 INNER JOIN APE ON t1.dc_structureprincipalede = APE.id_ape ,"
+    sql+= " FROM T_EFO t1 ,"
     sql+="(SELECT COUNT(DISTINCT t2.dc_individu_local) AS nbDEEFO"
-    sql+=" FROM T_EFO t2 INNER JOIN APE ON t2.dc_structureprincipalede = APE.id_ape"
+    // sql+=" FROM T_EFO t2 INNER JOIN APE ON t2.dc_structureprincipalede = APE.id_ape"
+    sql+=" FROM T_EFO t2"
     
     let sqlValues = [];
     
@@ -416,7 +422,8 @@ router.get('/', passport.authenticate('jwt', { session:  false }), (req,resp) =>
 
     sql+= ") x ,"
     sql+="(SELECT COUNT(DISTINCT dc_individu_local) AS nbDE"
-    sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    // sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    sql += ' FROM T_Portefeuille'
     
     Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_lblformacode').map((key, index) => {
         if (index === 0) {

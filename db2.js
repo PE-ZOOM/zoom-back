@@ -8,7 +8,7 @@ var pool  = mysql.createPool({
 });
 
 
-
+pool.query("select 1+1",(err,row)=>{});
 
 module.exports = pool;
 
