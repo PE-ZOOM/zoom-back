@@ -12,7 +12,8 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
    
     let sql = ""
         sql += "SELECT *, DATE_FORMAT(dd_datepreconisation,'%d/%m/%Y') AS french_datepreco "
-        sql += ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+        // sql += ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+        sql += ' FROM T_EFO'
 
     let sqlValues = [];
     
@@ -113,7 +114,8 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+= ' CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,'
         sql+= ' CASE WHEN (nbDEEFO / t3. nbDE) IS NULL  THEN 0 ELSE nbDEEFO / t3. nbDE END AS tx FROM'
         sql+= '(SELECT p1.dc_dernieragentreferent, count(p1.dc_individu_local) as nbEFO'
-        sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+        // sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+        sql+= ' FROM T_EFO p1'
  
     let sqlValues = [];
     
@@ -129,12 +131,21 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
 
         } else  {
 
+        // if (key==='dt') {
+        //     if (index === 0) {
+        //         sql += ` WHERE a1.${key} = ?`
+        //     }
+        //     else {
+        //         sql += ` AND a1.${key} = ?`
+    
+        //     } 
+        // }
         if (key==='dt') {
             if (index === 0) {
-                sql += ` WHERE a1.${key} = ?`
+                sql += ` WHERE ${key} = ?`
             }
             else {
-                sql += ` AND a1.${key} = ?`
+                sql += ` AND ${key} = ?`
     
             } 
         }
@@ -154,7 +165,8 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     sql+=' GROUP BY p1.dc_dernieragentreferent) as t1 INNER JOIN'
     sql+=' (SELECT x.dc_dernieragentreferent, count(x.dc_individu_local) as nbDEEFO FROM'
     sql+=' (SELECT DISTINCT p2.dc_individu_local, p2.dc_dernieragentreferent'
-    sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+    // sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+    sql+=' FROM T_EFO p2'
    
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
@@ -169,12 +181,21 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
 
         } else  {
 
+        // if (key==='dt') {
+        //     if (index === 0) {
+        //         sql += ` WHERE a2.${key} = ?`
+        //     }
+        //     else {
+        //         sql += ` AND a2.${key} = ?`
+    
+        //     } 
+        // }
         if (key==='dt') {
             if (index === 0) {
-                sql += ` WHERE a2.${key} = ?`
+                sql += ` WHERE ${key} = ?`
             }
             else {
-                sql += ` AND a2.${key} = ?`
+                sql += ` AND ${key} = ?`
     
             } 
         }
@@ -196,16 +217,26 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     sql+=') as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'
     sql+=' RIGHT JOIN'
     sql+=' (SELECT p3.dc_dernieragentreferent, count(p3.dc_individu_local) as nbDE'
-    sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
+    // sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
+    sql+=' FROM T_Portefeuille p3'
 
     Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_lblformacode').map((key, index) => {
         
+        // if (key==='dt') {
+        //     if (index === 0) {
+        //         sql += ` WHERE a3.${key} = ?`
+        //     }
+        //     else {
+        //         sql += ` AND a3.${key} = ?`
+    
+        //     } 
+        // }
         if (key==='dt') {
             if (index === 0) {
-                sql += ` WHERE a3.${key} = ?`
+                sql += ` WHERE ${key} = ?`
             }
             else {
-                sql += ` AND a3.${key} = ?`
+                sql += ` AND ${key} = ?`
     
             } 
         }
@@ -297,18 +328,28 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+= ' CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,'
         sql+= ' CASE WHEN (nbDEEFO / t3. nbDE) IS NULL  THEN 0 ELSE nbDEEFO / t3. nbDE END AS tx FROM'
         sql+= '(SELECT p1.dc_structureprincipalede, count(p1.dc_individu_local) as nbEFO'
-        sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+        // sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+        sql+= ' FROM T_EFO p1'
  
     let sqlValues = [];
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
+        // if (key==='dt') {
+        //     if (index === 0) {
+        //         sql += ` WHERE a1.${key} = ?`
+        //     }
+        //     else {
+        //         sql += ` AND a1.${key} = ?`
+    
+        //     } 
+        // }
         if (key==='dt') {
             if (index === 0) {
-                sql += ` WHERE a1.${key} = ?`
+                sql += ` WHERE ${key} = ?`
             }
             else {
-                sql += ` AND a1.${key} = ?`
+                sql += ` AND ${key} = ?`
     
             } 
         }
@@ -327,17 +368,27 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
     sql+=' GROUP BY p1.dc_structureprincipalede) as t1 INNER JOIN'
     sql+=' (SELECT x.dc_structureprincipalede, count(x.dc_individu_local) as nbDEEFO FROM'
     sql+=' (SELECT DISTINCT p2.dc_individu_local, p2.dc_structureprincipalede'
-    sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+    // sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+    sql+=' FROM T_EFO p2'
    
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
+        // if (key==='dt') {
+        //     if (index === 0) {
+        //         sql += ` WHERE a2.${key} = ?`
+        //     }
+        //     else {
+        //         sql += ` AND a2.${key} = ?`
+    
+        //     } 
+        // }
         if (key==='dt') {
             if (index === 0) {
-                sql += ` WHERE a2.${key} = ?`
+                sql += ` WHERE ${key} = ?`
             }
             else {
-                sql += ` AND a2.${key} = ?`
+                sql += ` AND ${key} = ?`
     
             } 
         }
@@ -358,16 +409,26 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
     sql+=') as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'
     sql+=' RIGHT JOIN'
     sql+=' (SELECT p3.dc_structureprincipalede, count(p3.dc_individu_local) as nbDE'
-    sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
+    // sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
+    sql+=' FROM T_Portefeuille p3'
 
     Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_formacode_id').map((key, index) => {
         
+        // if (key==='dt') {
+        //     if (index === 0) {
+        //         sql += ` WHERE a3.${key} = ?`
+        //     }
+        //     else {
+        //         sql += ` AND a3.${key} = ?`
+    
+        //     } 
+        // }
         if (key==='dt') {
             if (index === 0) {
-                sql += ` WHERE a3.${key} = ?`
+                sql += ` WHERE ${key} = ?`
             }
             else {
-                sql += ` AND a3.${key} = ?`
+                sql += ` AND ${key} = ?`
     
             } 
         }

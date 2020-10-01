@@ -14,7 +14,8 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
    
     let sql = ""
         sql += `SELECT *`
-        sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+        // sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+        sql += ' FROM T_Portefeuille'
         sql += ' WHERE dc_situationde = 2'
 
     let sqlValues = [];
@@ -108,44 +109,67 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
 //  Group BY p2.dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent
 
 
+    // let sql = "SELECT t2.dc_dernieragentreferent, CASE WHEN t1.nbDECriteres IS NULL THEN 0 ELSE t1.nbDECriteres END AS nbDECriteres, t2.nbDE," 
+    //     sql+= ' CASE WHEN (nbDECriteres / t2. nbDE) IS NULL THEN 0 ELSE nbDECriteres / t2. nbDE END AS tx FROM'
+    //     sql += '(SELECT p1.dc_dernieragentreferent, count(p1.dc_individu_local) as nbDECriteres'
+    //     sql += ' FROM T_Portefeuille p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+    //     sql += ' WHERE p1.dc_situationde = 2'
+
     let sql = "SELECT t2.dc_dernieragentreferent, CASE WHEN t1.nbDECriteres IS NULL THEN 0 ELSE t1.nbDECriteres END AS nbDECriteres, t2.nbDE," 
         sql+= ' CASE WHEN (nbDECriteres / t2. nbDE) IS NULL THEN 0 ELSE nbDECriteres / t2. nbDE END AS tx FROM'
-        sql += '(SELECT p1.dc_dernieragentreferent, count(p1.dc_individu_local) as nbDECriteres'
-        sql += ' FROM T_Portefeuille p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
-        sql += ' WHERE p1.dc_situationde = 2'
+        sql += '(SELECT dc_dernieragentreferent, count(dc_individu_local) as nbDECriteres'
+        sql += ' FROM T_Portefeuille'
+        sql += ' WHERE dc_situationde = 2'    
 
     let sqlValues = [];
     
+    // Object.keys(query).map((key, index) => {
+    //     if (key==='dt') {
+    //         sql += ` AND a1.${key} = ?`
+    //         sqlValues.push(query[key])
+    //     }
+    //     else {
+    //     sql += ` AND p1.${key} = ?`
+    //     sqlValues.push(query[key])
+    //     }
+
+    // })
     Object.keys(query).map((key, index) => {
-        if (key==='dt') {
-            sql += ` AND a1.${key} = ?`
+            sql += ` ${key} = ?`
             sqlValues.push(query[key])
         }
-        else {
-        sql += ` AND p1.${key} = ?`
-        sqlValues.push(query[key])
-        }
+       )
 
-    })
+        // sql+=' GROUP BY p1.dc_dernieragentreferent) as t1 RIGHT JOIN '
+        // sql+='(SELECT p2.dc_dernieragentreferent, count(p2.dc_individu_local) as nbDE '
+        // sql+=' FROM T_Portefeuille p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+        // sql+=' WHERE p2.dc_situationde = 2'
 
-        sql+=' GROUP BY p1.dc_dernieragentreferent) as t1 RIGHT JOIN '
-        sql+='(SELECT p2.dc_dernieragentreferent, count(p2.dc_individu_local) as nbDE '
-        sql+=' FROM T_Portefeuille p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
-        sql+=' WHERE p2.dc_situationde = 2'
+        sql+=' GROUP BY dc_dernieragentreferent) as t1 RIGHT JOIN '
+        sql+='(SELECT dc_dernieragentreferent, count(dc_individu_local) as nbDE '
+        sql+=' FROM T_Portefeuille'
+        sql+=' WHERE dc_situationde = 2'
+
+        // Object.keys(query).filter((key) => key==='dc_dernieragentreferent' || key==='dc_structureprincipalede' || key==='dt').map((key, index) => {
+        //         if (key==='dt') {
+        //             sql += ` AND a2.${key} = ?`
+        //             sqlValues.push(query[key])
+        //         }
+        //         else {
+        //         sql += ` AND p2.${key} = ?`
+        //         sqlValues.push(query[key])
+        //         }
+        
+        //     })
 
         Object.keys(query).filter((key) => key==='dc_dernieragentreferent' || key==='dc_structureprincipalede' || key==='dt').map((key, index) => {
-                if (key==='dt') {
-                    sql += ` AND a2.${key} = ?`
-                    sqlValues.push(query[key])
-                }
-                else {
-                sql += ` AND p2.${key} = ?`
+                
+                sql += ` AND ${key} = ?`
                 sqlValues.push(query[key])
-                }
+            })    
         
-            })
-        
-        sql+=' GROUP BY p2.dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
+        // sql+=' GROUP BY p2.dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
+        sql+=' GROUP BY dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
 
 
     // console.log(sql)
@@ -215,44 +239,68 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
 router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp) => {
     const query = req.query;
 
+    // let sql = "SELECT t2.dc_structureprincipalede, CASE WHEN t1.nbDECriteres IS NULL THEN 0 ELSE t1.nbDECriteres END AS nbDECriteres, t2.nbDE, "
+    //     sql+= ' CASE WHEN (nbDECriteres / t2. nbDE) IS NULL THEN 0 ELSE nbDECriteres / t2. nbDE END AS tx FROM'
+    //     sql += '(SELECT p1.dc_structureprincipalede, count(p1.dc_individu_local) as nbDECriteres'
+    //     sql += ' FROM T_Portefeuille p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+    //     sql += ' WHERE p1.dc_situationde = 2'
+
     let sql = "SELECT t2.dc_structureprincipalede, CASE WHEN t1.nbDECriteres IS NULL THEN 0 ELSE t1.nbDECriteres END AS nbDECriteres, t2.nbDE, "
         sql+= ' CASE WHEN (nbDECriteres / t2. nbDE) IS NULL THEN 0 ELSE nbDECriteres / t2. nbDE END AS tx FROM'
-        sql += '(SELECT p1.dc_structureprincipalede, count(p1.dc_individu_local) as nbDECriteres'
-        sql += ' FROM T_Portefeuille p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
-        sql += ' WHERE p1.dc_situationde = 2'
+        sql += '(SELECT dc_structureprincipalede, count(dc_individu_local) as nbDECriteres'
+        sql += ' FROM T_Portefeuille'
+        sql += ' WHERE dc_situationde = 2'    
 
     let sqlValues = [];
     
-    Object.keys(query).map((key, index) => {
-        if (key==='dt') {
-            sql += ` AND a1.${key} = ?`
-            sqlValues.push(query[key])
-        }
-        else {
-        sql += ` AND p1.${key} = ?`
-        sqlValues.push(query[key])
-        }
+    // Object.keys(query).map((key, index) => {
+    //     if (key==='dt') {
+    //         sql += ` AND a1.${key} = ?`
+    //         sqlValues.push(query[key])
+    //     }
+    //     else {
+    //     sql += ` AND p1.${key} = ?`
+    //     sqlValues.push(query[key])
+    //     }
 
+    // })
+    Object.keys(query).map((key, index) => {
+        sql += ` AND ${key} = ?`
+        sqlValues.push(query[key])
+        
     })
 
-        sql+=' GROUP BY p1.dc_structureprincipalede) as t1 RIGHT JOIN '
-        sql+='(SELECT p2.dc_structureprincipalede, count(p2.dc_individu_local) as nbDE '
-        sql+=' FROM T_Portefeuille p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
-        sql+=' WHERE p2.dc_situationde = 2'
+        // sql+=' GROUP BY p1.dc_structureprincipalede) as t1 RIGHT JOIN '
+        // sql+='(SELECT p2.dc_structureprincipalede, count(p2.dc_individu_local) as nbDE '
+        // sql+=' FROM T_Portefeuille p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+        // sql+=' WHERE p2.dc_situationde = 2'
 
+        sql+=' GROUP BY dc_structureprincipalede) as t1 RIGHT JOIN '
+        sql+='(SELECT dc_structureprincipalede, count(dc_individu_local) as nbDE '
+        sql+=' FROM T_Portefeuille'
+        sql+=' WHERE dc_situationde = 2'
+
+        // Object.keys(query).filter((key) => key==='dc_dernieragentreferent' || key==='dc_structureprincipalede' || key==='dt').map((key, index) => {
+        //         if (key==='dt') {
+        //             sql += ` AND a2.${key} = ?`
+        //             sqlValues.push(query[key])
+        //         }
+        //         else {
+        //         sql += ` AND p2.${key} = ?`
+        //         sqlValues.push(query[key])
+        //         }
+        
+        //     })
         Object.keys(query).filter((key) => key==='dc_dernieragentreferent' || key==='dc_structureprincipalede' || key==='dt').map((key, index) => {
-                if (key==='dt') {
-                    sql += ` AND a2.${key} = ?`
-                    sqlValues.push(query[key])
-                }
-                else {
-                sql += ` AND p2.${key} = ?`
+                
+                sql += ` AND ${key} = ?`
                 sqlValues.push(query[key])
-                }
+                
         
-            })
+            })   
         
-        sql+=' GROUP BY p2.dc_structureprincipalede) as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'    
+        // sql+=' GROUP BY p2.dc_structureprincipalede) as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'    
+        sql+=' GROUP BY dc_structureprincipalede) as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'    
 
 
     // console.log(sql)
