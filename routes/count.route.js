@@ -52,7 +52,7 @@ const passport = require('passport');
 
         // Handle error after the release.
         if (err){
-          console.log(err.sqlMessage)
+          // console.log(err.sqlMessage)
           return  resp.status(500).json({
                   err: "true", 
                   error: err.message,
@@ -114,7 +114,7 @@ router.get('/efo', passport.authenticate('jwt', { session:  false }), (req,resp)
     //http://localhost:5000/count/efo?dt=DTNE
     if (req.query.dt) {
       fieldValue = req.query.dt;
-      sql += ' AND dt = ? ';
+      sql += ' WHERE dt = ? ';
     }
 
     // console.log(fieldValue)
@@ -139,7 +139,6 @@ router.get('/efo', passport.authenticate('jwt', { session:  false }), (req,resp)
 
         // Handle error after the release.
         if (err){
-          console.log(err.sqlMessage)
           return  resp.status(500).json({
                   err: "true", 
                   error: err.message,

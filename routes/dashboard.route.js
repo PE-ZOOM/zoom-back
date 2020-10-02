@@ -5,6 +5,8 @@ const connection_pool = require('../db2');
 
 router.get('/jalon', (req, res) => {
   const query = req.query;
+  
+  let fieldValue = ''
   // const int1= [0,30];
   // const int2= [int1[1] + 1, 60];
   // let sql = 'SELECT x.dc_lblmotifjalonpersonnalise,'    
@@ -57,9 +59,25 @@ router.get('/jalon', (req, res) => {
     sql += '          WHERE dc_situationde = 2 '
 
           Object.keys(query).filter((key) => query[key]!=='all').map((key) => {
-            if(req.query[key]!=="null" && req.query[key]!==undefined)
-            {
-              sql += ` AND ${key} = "${req.query[key]}" `
+            // if(req.query[key]!=="null" && req.query[key]!==undefined)
+            // {
+            //   sql += ` AND ${key} = "${req.query[key]}" `
+            // }
+            if (req.query.dc_dernieragentreferent) {
+              fieldValue = req.query.dc_dernieragentreferent;
+              sql += ' AND dc_dernieragentreferent = ? ';
+            }
+            //ELP
+            //http://localhost:5000/count/efo?dc_structureprincipalede=97801
+            if (req.query.dc_structureprincipalede) {
+              fieldValue = req.query.dc_structureprincipalede;
+              sql += ' AND dc_structureprincipalede = ? ';
+            }
+            //DTNE-DTSO
+            //http://localhost:5000/count/efo?dt=DTNE
+            if (req.query.dt) {
+              fieldValue = req.query.dt;
+              sql += ' AND dt = ? ';
             }
           })
 
@@ -71,7 +89,7 @@ router.get('/jalon', (req, res) => {
   connection_pool.getConnection(function(error, conn) {
     if (error) throw err; // not connected!
 
-    conn.query(sql, (err, result) => {
+    conn.query(sql, [fieldValue], (err, result) => {
     // When done with the connection, release it.
       conn.release();
 
@@ -98,7 +116,7 @@ router.get('/jalon', (req, res) => {
 //a changer
 router.get('/efo', (req, res) => {
   const query = req.query;
-
+  let fieldValue = ''
   let sql = 'SELECT CONCAT("EFO ", dc_statutaction_id)  as lbl, COUNT(dc_statutaction_id) as nb FROM T_EFO'
     // sql += ' INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
 
@@ -106,27 +124,46 @@ router.get('/efo', (req, res) => {
   //   sql += ` WHERE ${key} = "${query[key]}"  `
   // })
   Object.keys(query).filter((key) => query[key]!=='all').map((key,index) => {
-    if(req.query[key]!=="null" && req.query[key]!==undefined)
-    {
+  //   if(req.query[key]!=="null" && req.query[key]!==undefined)
+  //   {
 
-      if (index===0){
-        sql +=` WHERE ${key} = "${req.query[key]}"`
-      }
-      else {
-      sql += ` AND ${key} = "${req.query[key]}" `
-      // if(key==='dt'){
-      //   sql += ` AND ${key} = "${req.query[key]}" `
-      // }
+  //     if (index===0){
+  //       sql +=` WHERE ${key} = "${req.query[key]}"`
+  //     }
+  //     else {
+  //     sql += ` AND ${key} = "${req.query[key]}" `
+  //     // if(key==='dt'){
+  //     //   sql += ` AND ${key} = "${req.query[key]}" `
+  //     // }
+  //   }
+  // }
+  //Conseiller
+    //http://localhost:5000/count/efo?dc_dernieragentreferent=P000617 - XXXX
+    if (req.query.dc_dernieragentreferent) {
+      fieldValue = req.query.dc_dernieragentreferent;
+      sql += ' WHERE dc_dernieragentreferent = ? ';
     }
-  }})
+    //ELP
+    //http://localhost:5000/count/efo?dc_structureprincipalede=97801
+    if (req.query.dc_structureprincipalede) {
+      fieldValue = req.query.dc_structureprincipalede;
+      sql += ' WHERE dc_structureprincipalede = ? ';
+    }
+    //DTNE-DTSO
+    //http://localhost:5000/count/efo?dt=DTNE
+    if (req.query.dt) {
+      fieldValue = req.query.dt;
+      sql += ' WHERE dt = ? ';
+    }
+})
 
 
   sql += ' GROUP BY dc_statutaction_id'
-
+  
   connection_pool.getConnection(function(error, conn) {
     if (error) throw err; // not connected!
 
-    conn.query(sql, (err, result) => {
+    conn.query(sql, [fieldValue], (err, result) => {
     // When done with the connection, release it.
       conn.release();
 

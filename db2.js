@@ -10,6 +10,16 @@ var pool  = mysql.createPool({
 
 pool.query("select 1+1",(err,row)=>{});
 
+pool.on('error', function(err) {
+  console.log('db error', err);
+  if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+    console.log('FICHIER DB2 HANDLE ERROR')                        // lost due to either server restart, or a
+  } else {                                      // connnection idle timeout (the wait_timeout
+    throw err;                                  // server variable configures this)
+  }
+});
+
+
 module.exports = pool;
 
 
