@@ -79,7 +79,6 @@ router.get('/listemodeacc', passport.authenticate('jwt', { session:  false }), (
             sqlValues.push(query[key]) 
         })
 
-        console.log(sql)
 
     connection_pool.getConnection(function(error, conn) {
       if (error) throw err; // not connected!
@@ -347,8 +346,6 @@ router.get('/presta', passport.authenticate('jwt', { session:  false }), (req,re
         })
     
     sql+= " GROUP BY annee, mois order by annee desc, mois desc"
-
-    console.log(sql)
     
     connection_pool.getConnection(function(error, conn) {
       if (error) throw err; // not connected!
