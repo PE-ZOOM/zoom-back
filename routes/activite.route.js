@@ -209,111 +209,111 @@ router.get('/contacts', passport.authenticate('jwt', { session:  false }), (req,
     });
 })
 //END
-//contactsEntrant
-//http://localhost:5000/activites/contactsEntrant?
-router.get('/contactsEntrant', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
-    const query = req.query;
+// //contactsEntrant
+// //http://localhost:5000/activites/contactsEntrant?
+// router.get('/contactsEntrant', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+//     const query = req.query;
    
 
-    let sql ="SELECT annee , mois , Sum(contacts_tel_entrant) AS Tel, Sum(contacts_mail_entrant) AS Mail, Sum(contacts_internet_entrant) AS Internet,"
-    sql+= " Sum(mailnet_entrant) as MailNet, sum(contact_entrant) as contacts"
-    // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
-    sql+=" FROM T_Activites"
+//     let sql ="SELECT annee , mois , Sum(contacts_tel_entrant) AS Tel, Sum(contacts_mail_entrant) AS Mail, Sum(contacts_internet_entrant) AS Internet,"
+//     sql+= " Sum(mailnet_entrant) as MailNet, sum(contact_entrant) as contacts"
+//     // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+//     sql+=" FROM T_Activites"
     
-    let sqlValues = [];
+//     let sqlValues = [];
     
-    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+//     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
-                if (index === 0) {
-                    sql += ` WHERE ${key} = ?`
-                }
-                else {
-                    sql += ` AND ${key} = ?`
+//                 if (index === 0) {
+//                     sql += ` WHERE ${key} = ?`
+//                 }
+//                 else {
+//                     sql += ` AND ${key} = ?`
         
-                } 
+//                 } 
             
-            sqlValues.push(query[key])
-        })
+//             sqlValues.push(query[key])
+//         })
     
-    sql+= " GROUP BY annee, mois order by annee, mois desc"
+//     sql+= " GROUP BY annee, mois order by annee, mois desc"
     
-    connection_pool.getConnection(function(error, conn) {
-      if (error) throw err; // not connected!
+//     connection_pool.getConnection(function(error, conn) {
+//       if (error) throw err; // not connected!
 
-      conn.query(sql, sqlValues, (err, result) => {
-      // When done with the connection, release it.
-        conn.release();
+//       conn.query(sql, sqlValues, (err, result) => {
+//       // When done with the connection, release it.
+//         conn.release();
 
-        // Handle error after the release.
-        if (err){
-          console.log(err.sqlMessage)
-          return  resp.status(500).json({
-                  err: "true", 
-                  error: err.message,
-                  errno: err.errno,
-                  sql: err.sql,
-                  });
-        }else{
-          resp.status(201).json(result)
-        }
+//         // Handle error after the release.
+//         if (err){
+//           console.log(err.sqlMessage)
+//           return  resp.status(500).json({
+//                   err: "true", 
+//                   error: err.message,
+//                   errno: err.errno,
+//                   sql: err.sql,
+//                   });
+//         }else{
+//           resp.status(201).json(result)
+//         }
 
-      // Don't use the connection here, it has been returned to the pool.
-      });   
-    });
-})
-//END
-//contactsSortant
-//http://localhost:5000/activites/contactsEntrant?
-router.get('/contactsSortant', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
-    const query = req.query;
+//       // Don't use the connection here, it has been returned to the pool.
+//       });   
+//     });
+// })
+// //END
+// //contactsSortant
+// //http://localhost:5000/activites/contactsEntrant?
+// router.get('/contactsSortant', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+//     const query = req.query;
 
-    let sql ="SELECT annee , mois , Sum(contacts_tel_sortant) AS Tel, Sum(contacts_mail_sortant) AS Mail, Sum(contacts_internet_sortant) AS Internet,"
-    sql+= " Sum(mailnet_sortant) as MailNet, sum(contact_sortant) as contacts"
-    // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
-    sql+=" FROM T_Activites"
+//     let sql ="SELECT annee , mois , Sum(contacts_tel_sortant) AS Tel, Sum(contacts_mail_sortant) AS Mail, Sum(contacts_internet_sortant) AS Internet,"
+//     sql+= " Sum(mailnet_sortant) as MailNet, sum(contact_sortant) as contacts"
+//     // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+//     sql+=" FROM T_Activites"
     
-    let sqlValues = [];
+//     let sqlValues = [];
     
-    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+//     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
                 
-                if (index === 0) {
-                    sql += ` WHERE ${key} = ?`
-                }
-                else {
-                    sql += ` AND ${key} = ?`
+//                 if (index === 0) {
+//                     sql += ` WHERE ${key} = ?`
+//                 }
+//                 else {
+//                     sql += ` AND ${key} = ?`
         
-                } 
+//                 } 
             
-            sqlValues.push(query[key])
-        })
+//             sqlValues.push(query[key])
+//         })
     
-    sql+= " GROUP BY annee, mois order by annee, mois desc"
+//     sql+= " GROUP BY annee, mois order by annee, mois desc"
     
-    connection_pool.getConnection(function(error, conn) {
-      if (error) throw err; // not connected!
+//     connection_pool.getConnection(function(error, conn) {
+//       if (error) throw err; // not connected!
 
-      conn.query(sql, sqlValues, (err, result) => {
-      // When done with the connection, release it.
-        conn.release();
+//       conn.query(sql, sqlValues, (err, result) => {
+//       // When done with the connection, release it.
+//         conn.release();
 
-        // Handle error after the release.
-        if (err){
-          console.log(err.sqlMessage)
-          return  resp.status(500).json({
-                  err: "true", 
-                  error: err.message,
-                  errno: err.errno,
-                  sql: err.sql,
-                  });
-        }else{
-          resp.status(201).json(result)
-        }
+//         // Handle error after the release.
+//         if (err){
+//           console.log(err.sqlMessage)
+//           return  resp.status(500).json({
+//                   err: "true", 
+//                   error: err.message,
+//                   errno: err.errno,
+//                   sql: err.sql,
+//                   });
+//         }else{
+//           resp.status(201).json(result)
+//         }
 
-      // Don't use the connection here, it has been returned to the pool.
-      });   
-    });
-})
-//END
+//       // Don't use the connection here, it has been returned to the pool.
+//       });   
+//     });
+// })
+// //END
 
 
 

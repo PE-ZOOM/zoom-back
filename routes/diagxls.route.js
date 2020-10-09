@@ -115,7 +115,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     //     sql += ' FROM T_Portefeuille p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
     //     sql += ' WHERE p1.dc_situationde = 2'
 
-    let sql = "SELECT t2.dc_dernieragentreferent, CASE WHEN t1.nbDECriteres IS NULL THEN 0 ELSE t1.nbDECriteres END AS nbDECriteres, t2.nbDE," 
+    let sql = "SELECT t2.dc_dernieragentreferent, CASE WHEN t1.nbDECriteres IS NULL THEN 0 ELSE t1.nbDECriteres END AS nbDECriteres, t2.nbDE, " 
         sql+= ' CASE WHEN (nbDECriteres / t2. nbDE) IS NULL THEN 0 ELSE nbDECriteres / t2. nbDE END AS tx FROM'
         sql += '(SELECT dc_dernieragentreferent, count(dc_individu_local) as nbDECriteres'
         sql += ' FROM T_Portefeuille'
@@ -135,7 +135,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     // })
     Object.keys(query).map((key, index) => {
-            sql += ` ${key} = ?`
+            sql += ` AND ${key} = ?`
             sqlValues.push(query[key])
         }
        )
@@ -172,7 +172,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+=' GROUP BY dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
 
 
-    // console.log(sql)
+    //  console.log(sql)
     // console.log(sqlValues)
     connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!
