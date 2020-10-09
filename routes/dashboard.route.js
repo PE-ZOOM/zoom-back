@@ -9,7 +9,7 @@ router.get('/jalon', (req, res) => {
   let fieldValue = ''
   
     let sql = '    SELECT '
-    sql += '          CASE WHEN nbjouravantjalon IS NULL THEN "Sans Jalons" '
+    sql += '          CASE  '
     sql += '                WHEN nbjouravantjalon < 0 THEN "Jalons dépassés" '
     sql += '                WHEN nbjouravantjalon BETWEEN 0 AND 30 THEN "Entre 0 et 30 jours" '
     sql += '          END AS lbl,'
