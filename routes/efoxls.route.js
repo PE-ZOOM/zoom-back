@@ -11,13 +11,25 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     const query = req.query;
    
     let sql = ""
-        sql += "SELECT *, DATE_FORMAT(dd_datepreconisation,'%d/%m/%Y') AS french_datepreco "
+        sql += "SELECT dc_individu_local,dc_structureprincipalede,dc_dernieragentreferent,dc_civilite,"
+        sql += "dc_nom, dc_prenom,dc_categorie,dc_situationde,dc_parcours,dc_adresseemail,dc_telephone,"
+        sql += "dc_statutaction_id,dc_formacode_id, dc_lblformacode,"
+        sql += "DATE_FORMAT(dd_datepreconisation,'%d/%m/%Y') AS french_datepreco "
         // sql += ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
         sql += ' FROM T_EFO'
 
     let sqlValues = [];
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE ${key} > ? `
+        }
+        else {
+            sql += ` AND ${key} > ? `
+        } 
+      } else {
         
         if (key==='dc_lblformacode') {
             if (index === 0) {
@@ -29,7 +41,6 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 
         } else  {
         
-        
             if (index === 0) {
                     sql += ` WHERE ${key} = ?`
                 }
@@ -37,6 +48,7 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                     sql += ` AND ${key} = ?`
                 } 
             }
+        }
         sqlValues.push(query[key])
     })
 
@@ -109,8 +121,8 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 //http://localhost:5000/efoxlsx/ref?
 router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp) => {
     const query = req.query;
-
-    let sql = 'Select t3.dc_dernieragentreferent, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,'
+    let sql = ''
+        sql+= 'Select t3.dc_dernieragentreferent, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,'
         sql+= ' CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,'
         sql+= ' CASE WHEN (nbDEEFO / t3. nbDE) IS NULL  THEN 0 ELSE nbDEEFO / t3. nbDE END AS tx FROM'
         sql+= '(SELECT p1.dc_dernieragentreferent, count(p1.dc_individu_local) as nbEFO'
@@ -121,42 +133,32 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE p1.${key} > ? `
+        }
+        else {
+            sql += ` AND p1.${key} > ? `
+        } 
+      } else {
         if (key==='dc_lblformacode') {
             if (index === 0) {
                 sql += ` WHERE p1.${key} LIKE "%" ? "%"`
             }
             else {
                 sql += ` AND p1.${key} LIKE "%" ? "%"`
-            } 
-
-        } else  {
-
-        // if (key==='dt') {
-        //     if (index === 0) {
-        //         sql += ` WHERE a1.${key} = ?`
-        //     }
-        //     else {
-        //         sql += ` AND a1.${key} = ?`
-    
-        //     } 
-        // }
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
             }
-            else {
-                sql += ` AND ${key} = ?`
-    
-            } 
         }
-        else {
-            if (index === 0) {
+            
+        else {    
+        
+        if (index === 0) {
                 sql += ` WHERE p1.${key} = ?`
             }
             else {
                 sql += ` AND p1.${key} = ?`
-    
-            } 
+            }
         }
     }
         sqlValues.push(query[key])
@@ -170,36 +172,25 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
    
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
-        
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE p2.${key} > ? `
+        }
+        else {
+            sql += ` AND p2.${key} > ? `
+        } 
+      } else { 
         if (key==='dc_lblformacode') {
             if (index === 0) {
                 sql += ` WHERE p2.${key} LIKE "%" ? "%"`
             }
             else {
                 sql += ` AND p2.${key} LIKE "%" ? "%"`
-            } 
-
-        } else  {
-
-        // if (key==='dt') {
-        //     if (index === 0) {
-        //         sql += ` WHERE a2.${key} = ?`
-        //     }
-        //     else {
-        //         sql += ` AND a2.${key} = ?`
-    
-        //     } 
-        // }
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
             }
-            else {
-                sql += ` AND ${key} = ?`
-    
-            } 
         }
-        else {
+            
+        else { 
             if (index === 0) {
                 sql += ` WHERE p2.${key} = ?`
             }
@@ -207,8 +198,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p2.${key} = ?`
     
             } 
-        }
-    }
+        }}
         sqlValues.push(query[key])
     })
     
@@ -220,27 +210,9 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     // sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
     sql+=' FROM T_Portefeuille p3'
 
-    Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_lblformacode').map((key, index) => {
+    Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_lblformacode' && key!=='dd_datepreconisation').map((key, index) => {
         
-        // if (key==='dt') {
-        //     if (index === 0) {
-        //         sql += ` WHERE a3.${key} = ?`
-        //     }
-        //     else {
-        //         sql += ` AND a3.${key} = ?`
-    
-        //     } 
-        // }
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
-            }
-            else {
-                sql += ` AND ${key} = ?`
-    
-            } 
-        }
-        else {
+        
             if (index === 0) {
                 sql += ` WHERE p3.${key} = ?`
             }
@@ -248,12 +220,17 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p3.${key} = ?`
     
             } 
-        }
+        
         sqlValues.push(query[key])
     })
 
    sql+=' GROUP BY p3.dc_dernieragentreferent'
-   sql+=') as t3 ON t3.dc_dernieragentreferent=t1.dc_dernieragentreferent' 
+   sql+=') as t3 ON t3.dc_dernieragentreferent=t1.dc_dernieragentreferent'
+
+   
+
+//    console.log(sql)
+//    console.log(sqlValues)
 
     connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!
@@ -279,7 +256,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                     { header: 'Taux DE avec EFO', key: 'tx' },
                     
                 ];
-                worksheet.addRows(jsonResult);
+                
                 worksheet.columns.forEach(column => {
                     column.width = column.header.length < 10 ? 10 : column.header.length + 2
                   })
@@ -335,33 +312,33 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
-        // if (key==='dt') {
-        //     if (index === 0) {
-        //         sql += ` WHERE a1.${key} = ?`
-        //     }
-        //     else {
-        //         sql += ` AND a1.${key} = ?`
-    
-        //     } 
-        // }
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
-            }
-            else {
-                sql += ` AND ${key} = ?`
-    
-            } 
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE p1.${key} > ? `
         }
         else {
+            sql += ` AND p1.${key} > ? `
+        } 
+      } else {
+        if (key==='dc_lblformacode') {
             if (index === 0) {
+                sql += ` WHERE p1.${key} LIKE "%" ? "%"`
+            }
+            else {
+                sql += ` AND p1.${key} LIKE "%" ? "%"`
+            }
+        }
+            
+        else {    
+        
+        if (index === 0) {
                 sql += ` WHERE p1.${key} = ?`
             }
             else {
                 sql += ` AND p1.${key} = ?`
-    
-            } 
-        }
+            }
+        }}
         sqlValues.push(query[key])
     })
 
@@ -373,26 +350,25 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
    
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
-        
-        // if (key==='dt') {
-        //     if (index === 0) {
-        //         sql += ` WHERE a2.${key} = ?`
-        //     }
-        //     else {
-        //         sql += ` AND a2.${key} = ?`
-    
-        //     } 
-        // }
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
-            }
-            else {
-                sql += ` AND ${key} = ?`
-    
-            } 
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE p2.${key} > ? `
         }
         else {
+            sql += ` AND p2.${key} > ? `
+        } 
+      } else { 
+        if (key==='dc_lblformacode') {
+            if (index === 0) {
+                sql += ` WHERE p2.${key} LIKE "%" ? "%"`
+            }
+            else {
+                sql += ` AND p2.${key} LIKE "%" ? "%"`
+            }
+        }
+            
+        else { 
             if (index === 0) {
                 sql += ` WHERE p2.${key} = ?`
             }
@@ -400,7 +376,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p2.${key} = ?`
     
             } 
-        }
+        }}
         sqlValues.push(query[key])
     })
     
@@ -412,27 +388,9 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
     // sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
     sql+=' FROM T_Portefeuille p3'
 
-    Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_formacode_id').map((key, index) => {
+    Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_lblformacode' && key!=='dd_datepreconisation').map((key, index) => {
         
-        // if (key==='dt') {
-        //     if (index === 0) {
-        //         sql += ` WHERE a3.${key} = ?`
-        //     }
-        //     else {
-        //         sql += ` AND a3.${key} = ?`
-    
-        //     } 
-        // }
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE ${key} = ?`
-            }
-            else {
-                sql += ` AND ${key} = ?`
-    
-            } 
-        }
-        else {
+        
             if (index === 0) {
                 sql += ` WHERE p3.${key} = ?`
             }
@@ -440,7 +398,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p3.${key} = ?`
     
             } 
-        }
+        
         sqlValues.push(query[key])
     })
 
@@ -448,8 +406,8 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
    sql+=') as t3 ON t3.dc_structureprincipalede=t1.dc_structureprincipalede' 
     
 
-    // console.log(sql)
-    // console.log(sqlValues)
+    //  console.log(sql)
+    //  console.log(sqlValues)
 
     connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!

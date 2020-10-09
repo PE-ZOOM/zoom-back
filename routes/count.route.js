@@ -183,6 +183,8 @@ router.get(
     });
 
     sql += ') x , Diag WHERE x.name = Diag.name';
+    // sql += ' ORDER BY id_diag';
+
     // console.log(sql)
     // connection.query(sql, sqlValues, (err, results) => {
     //   if (err) {
