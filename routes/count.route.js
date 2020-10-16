@@ -186,6 +186,7 @@ router.get(
     // sql += ' ORDER BY id_diag';
 
     // console.log(sql)
+    // console.log(sqlValues)
     // connection.query(sql, sqlValues, (err, results) => {
     //   if (err) {
     //     resp.status(500).send('Internal server error');
