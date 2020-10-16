@@ -55,34 +55,44 @@ router.get('/listestatutaction', passport.authenticate('jwt', { session:  false 
 
 //Top 5
   router.get('/listeFormationDemandee', (req, resp) => {
+    const query = req.query;
     let sql = 'SELECT COUNT(dc_formacode_id ) as Qte, dc_lblformacode'
-        sql+= ' FROM T_EFO'
+        sql+= ' FROM T_EFO '
         
-    //Conseiller
-    if (req.query.dc_dernieragentreferent) {
-      fieldValue = req.query.dc_dernieragentreferent;
-      sql += ' WHERE dc_dernieragentreferent = ? ';
-    }
-    //ELP
-    if (req.query.dc_structureprincipalede) {
-      fieldValue = req.query.dc_structureprincipalede;
-      sql += ' WHERE dc_structureprincipalede = ? ';
-    }
-    //DTNE-DTSO
-    if (req.query.dt) {
-      fieldValue = req.query.dt;
-      sql += ' WHERE dt = ? ';
-    }
+        let sqlValues = [];
+    
+   
+        Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_lblformacode').map((key, index) => {
+          //datepreconisation 
+          if (key==='dd_datepreconisation') {
+            if (index === 0) {
+                sql += ` WHERE ${key} > ? `
+            }
+            else {
+                sql += ` AND ${key} > ? `
+            } 
+          } else {
+         
+                                if (index === 0) {
+                                    sql += ` WHERE ${key} = ?`
+                                }
+                                else {
+                                    sql += ` AND ${key} = ?`
+                                }   
+                      } 
+                                     
+                sqlValues.push(query[key])
+            })
     
     sql += ' GROUP BY dc_lblformacode ORDER BY COUNT(dc_formacode_id) DESC LIMIT 5'
 
     // console.log(sql)
-    // console.log(fieldValue)
+    // console.log(sqlValues)
 
     connection_pool.getConnection(function(error, conn) {
       if (error) throw err; // not connected!
 
-      conn.query(sql, [fieldValue], (err, result) => {
+      conn.query(sql, sqlValues, (err, result) => {
 
       // When done with the connection, release it.
         conn.release();
@@ -303,8 +313,8 @@ router.get('/', passport.authenticate('jwt', { session:  false }), (req,resp) =>
 
     sql+= " Group by x.nbDEEFO,y.nbDE"
 
-    console.log(sql)
-    console.log(sqlValues)
+    // console.log(sql)
+    // console.log(sqlValues)
 
     connection_pool.getConnection(function(error, conn) {
       if (error) throw err; // not connected!

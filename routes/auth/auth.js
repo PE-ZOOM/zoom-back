@@ -73,7 +73,7 @@ router.put('/update/:idgasi', passport.authenticate('jwt', { session:  false }),
         .json({updatedUser, flash:  `User updated!`});
     });
   }); 
-},
+}
 );
       
 
