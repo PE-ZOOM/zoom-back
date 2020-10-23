@@ -11,7 +11,7 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     const query = req.query;
    
     let sql = ""
-        sql += "SELECT dc_individu_local,dc_structureprincipalede,dc_dernieragentreferent,dc_civilite,"
+        sql += "SELECT dc_individu_local,dc_structureprincipalede,nom_ref,dc_civilite,"
         sql += "dc_nom, dc_prenom,dc_categorie,dc_situationde,dc_parcours,dc_adresseemail,dc_telephone,"
         sql += "dc_statutaction_id,dc_formacode_id, dc_lblformacode,"
         sql += "DATE_FORMAT(dd_datepreconisation,'%d/%m/%Y') AS french_datepreco "
@@ -70,13 +70,13 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                 worksheet.columns = [
                     { header: 'IDE', key: 'dc_individu_local'},
                     { header: 'APE', key: 'dc_structureprincipalede'},
-                    { header: 'Référent', key: 'dc_dernieragentreferent'},
+                    { header: 'Référent', key: 'nom_ref'},
                     { header: 'Civilité', key: 'dc_civilite'},
                     { header: 'Nom', key: 'dc_nom'},
                     { header: 'Prénom', key: 'dc_prenom'},
                     { header: 'Catégorie', key: 'dc_categorie'},
                     { header: 'Situation', key: 'dc_situationde'},
-                    { header: 'Parcours', key: 'dc_parcours'},
+                    { header: 'MSA', key: 'dc_parcours'},
                     { header: 'Mail', key: 'dc_adresseemail'},
                     { header: 'Tel', key: 'dc_telephone'},
                     { header: 'Statut Action', key: 'dc_statutaction_id'},
@@ -122,10 +122,10 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp) => {
     const query = req.query;
     let sql = ''
-        sql+= 'Select t3.dc_dernieragentreferent, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,'
+        sql+= 'Select t3.nom_ref, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,'
         sql+= ' CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,'
         sql+= ' CASE WHEN (nbDEEFO / t3. nbDE) IS NULL  THEN 0 ELSE nbDEEFO / t3. nbDE END AS tx FROM'
-        sql+= '(SELECT p1.dc_dernieragentreferent, count(p1.dc_individu_local) as nbEFO'
+        sql+= '(SELECT p1.nom_ref, count(p1.dc_individu_local) as nbEFO'
         // sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
         sql+= ' FROM T_EFO p1'
  
@@ -164,9 +164,9 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         sqlValues.push(query[key])
     })
 
-    sql+=' GROUP BY p1.dc_dernieragentreferent) as t1 INNER JOIN'
-    sql+=' (SELECT x.dc_dernieragentreferent, count(x.dc_individu_local) as nbDEEFO FROM'
-    sql+=' (SELECT DISTINCT p2.dc_individu_local, p2.dc_dernieragentreferent'
+    sql+=' GROUP BY p1.nom_ref) as t1 INNER JOIN'
+    sql+=' (SELECT x.nom_ref, count(x.dc_individu_local) as nbDEEFO FROM'
+    sql+=' (SELECT DISTINCT p2.dc_individu_local, p2.nom_ref'
     // sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
     sql+=' FROM T_EFO p2'
    
@@ -203,10 +203,10 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     })
     
 
-    sql+=') x Group by x.dc_dernieragentreferent'
-    sql+=') as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'
+    sql+=') x Group by x.nom_ref'
+    sql+=') as t2 ON t2.nom_ref=t1.nom_ref'
     sql+=' RIGHT JOIN'
-    sql+=' (SELECT p3.dc_dernieragentreferent, count(p3.dc_individu_local) as nbDE'
+    sql+=' (SELECT p3.nom_ref, count(p3.dc_individu_local) as nbDE'
     // sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
     sql+=' FROM T_Portefeuille p3'
 
@@ -224,8 +224,8 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         sqlValues.push(query[key])
     })
 
-   sql+=' GROUP BY p3.dc_dernieragentreferent'
-   sql+=') as t3 ON t3.dc_dernieragentreferent=t1.dc_dernieragentreferent'
+   sql+=' GROUP BY p3.nom_ref'
+   sql+=') as t3 ON t3.nom_ref=t1.nom_ref'
 
    
 
@@ -249,7 +249,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                 let workbook = new excel.Workbook(); //creating workbook
                 let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]});; //creating worksheet
                 worksheet.columns = [
-                    { header: 'Référent', key: 'dc_dernieragentreferent'},
+                    { header: 'Référent', key: 'nom_ref'},
                     { header: "Nombre d'EFO", key: 'nbEFO'},
                     { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
                     { header: 'Nombre de DE', key: 'nbDE' },

@@ -155,6 +155,56 @@ router.get('/listeyear', passport.authenticate('jwt', { session:  false }), (req
 })
 
 
+//liste filter ref
+//http://localhost:5000/activites/listeref?
+router.get('/listeref', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+  const query = req.query;
+
+  let sql = 'SELECT DISTINCT nom_complet'
+      // sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+      sql+= ' FROM T_Activites'
+      
+      let sqlValues = [];
+
+      Object.keys(query).map((key, index) => {
+          if (index === 0) {
+              sql += ` WHERE ${key} = ?`
+          }
+          else {
+              sql += ` AND ${key} = ?`
+  
+          } 
+          sqlValues.push(query[key]) 
+      })
+      sql+= " ORDER BY SUBSTRING(nom_complet, 10)"
+     
+
+  connection_pool.getConnection(function(error, conn) {
+    if (error) throw err; // not connected!
+
+    conn.query(sql, sqlValues, (err, result) => {
+    // When done with the connection, release it.
+      conn.release();
+
+      // Handle error after the release.
+      if (err){
+        console.log(err.sqlMessage)
+        return  resp.status(500).json({
+                err: "true", 
+                error: err.message,
+                errno: err.errno,
+                sql: err.sql,
+                });
+      }else{
+        resp.status(201).json(result)
+      }
+
+    // Don't use the connection here, it has been returned to the pool.
+    });   
+  });
+})
+
+
 
 //contacts
 //http://localhost:5000/activites/contacts?
@@ -325,8 +375,8 @@ router.get('/presta', passport.authenticate('jwt', { session:  false }), (req,re
 
     
     let sql ="SELECT annee , mois , Sum(nb_de_affectes) AS nb_de_affectes, Sum(presta_rca) AS ACTIV_Créa, Sum(presta_aem) AS ACTIV_Emploi," 
-    sql += " Sum(presta_acp) AS ACTIV_Projet, Sum(presta_rgc) AS Regards_croisés, Sum(presta_vsi) AS Valoriser_son_image_pro,"
-    sql += " Sum(presta_z08+presta_z10+presta_z16) AS Vers1métier, Sum(presta) AS Presta, CONCAT(FORMAT(sum(presta) / Sum(nb_de_affectes) * 100, 1),'%') as tx_prestation"
+    sql += " Sum(presta_ap2) AS AP2, Sum(presta_rgc) AS Regards_croisés, Sum(presta_vsi) AS Valoriser_son_image_pro,"
+    sql += " Sum(presta_z08+presta_z10+presta_z16) AS Vers1métier, Sum(presta_acl) AS ACL, Sum(presta_emd) AS EMD, Sum(presta) AS Presta, CONCAT(FORMAT(sum(presta) / Sum(nb_de_affectes) * 100, 1),'%') as tx_prestation"
     // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
     sql+=" FROM T_Activites"
     

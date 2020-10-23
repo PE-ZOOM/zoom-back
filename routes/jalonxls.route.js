@@ -50,14 +50,14 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                         worksheet.columns = [
                             { header: 'Motif Jalon', key: 'dc_lblmotifjalonpersonnalise' },
                             { header: 'APE', key: 'dc_structureprincipalede'},
-                            { header: 'Référent', key: 'dc_dernieragentreferent'},
+                            { header: 'Référent', key: 'nom_ref'},
                             { header: 'IDE', key: 'dc_individu_local'},
                             { header: 'Civilité', key: 'dc_civilite'},
                             { header: 'Nom', key: 'dc_nom'},
                             { header: 'Prénom', key: 'dc_prenom'},
                             { header: 'Catégorie', key: 'dc_categorie'},
                             { header: 'Situation', key: 'dc_situationde'},
-                            { header: 'Parcours', key: 'dc_parcours'},
+                            { header: 'MSA', key: 'dc_parcours'},
                             { header: 'Mail', key: 'dc_adresseemail'},
                             { header: 'Tel', key: 'dc_telephone'},
                             { header: 'Interval jalon', key: 'textnbjouravantjalon'},
@@ -126,7 +126,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     const int1= [0,30];
     const int2= [int1[1] + 1, 60];
 
-let sql = 'SELECT x.dc_lblmotifjalonpersonnalise, x.dc_dernieragentreferent,'    
+let sql = 'SELECT x.dc_lblmotifjalonpersonnalise, x.nom_ref,'    
 sql+=` MAX(CASE WHEN x.textnbjouravantjalon = "Sans Jalons" THEN x.nb ELSE 0 END) "Sans Jalons",`
 sql+=` MAX(CASE WHEN x.textnbjouravantjalon = "Jalons dépassés" THEN x.nb ELSE 0 END) "Jalons dépassés",`
 sql+=` MAX(CASE WHEN x.textnbjouravantjalon = "Entre ${int1[0]} et ${int1[1]} jours" THEN x.nb ELSE 0 END) "Entre ${int1[0]} et ${int1[1]} jours",`
@@ -135,7 +135,7 @@ sql+=` MAX(CASE WHEN x.textnbjouravantjalon = "> ${int2[1]} jours" THEN x.nb ELS
 sql+=` SUM(x.nb) Total`
 sql+=' FROM ('
 
-    sql += 'SELECT dc_lblmotifjalonpersonnalise, dc_dernieragentreferent,'
+    sql += 'SELECT dc_lblmotifjalonpersonnalise, nom_ref,'
     sql += ' CASE'
     sql += ' WHEN nbjouravantjalon < 0 THEN "Jalons dépassés"'
     sql += ` WHEN nbjouravantjalon BETWEEN ${int1[0]} AND ${int1[1]} THEN "Entre ${int1[0]} et ${int1[1]} jours"`
@@ -170,8 +170,8 @@ sql+=' FROM ('
         sql += ' AND  dt = ? '
       }
    
-    sql += ' GROUP BY dc_lblmotifjalonpersonnalise, dc_dernieragentreferent, textnbjouravantjalon) x'
-    sql += ' GROUP BY x.dc_lblmotifjalonpersonnalise, x.dc_dernieragentreferent'
+    sql += ' GROUP BY dc_lblmotifjalonpersonnalise, nom_ref, textnbjouravantjalon) x'
+    sql += ' GROUP BY x.dc_lblmotifjalonpersonnalise, x.nom_ref'
 
     // console.log(sql)
 
@@ -191,7 +191,7 @@ sql+=' FROM ('
             let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]}); //creating worksheet
             worksheet.columns = [
                 { header: 'Motif jalon', key: 'dc_lblmotifjalonpersonnalise'},
-                { header: 'Référent', key: 'dc_dernieragentreferent' },
+                { header: 'Référent', key: 'nom_ref' },
                 { header: 'Jalons dépassés', key: 'Jalons dépassés'},
                 { header: `Entre ${int1[0]} et ${int1[1]} jours`, key: `Entre ${int1[0]} et ${int1[1]} jours`},
                 { header: `Entre ${int2[0]} et ${int2[1]} jours`, key: `Entre ${int2[0]} et ${int2[1]} jours`},
@@ -231,7 +231,7 @@ sql+=' FROM ('
 })
 //END
 
-//select excel jalon ref
+//select excel jalon ape
 //http://localhost:5000/jalonxlsx/ape?
 router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp) => {
     const query = req.query;

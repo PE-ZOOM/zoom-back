@@ -10,54 +10,18 @@ const connection_pool = require('../db2');
 var multer = require('multer');
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
-                cb(null, 'public/')
+                cb(null, 'csv/')
               },
   filename: function (req, file, cb) {
-            cb(null, Date.now() + '-' +file.originalname )
+    // cb(null, Date.now() + '-' +file.originalname )
+    cb(null, file.originalname )
           }
 })
 
 var upload = multer({ storage: storage }).single('file')
 
 
-router.post('/test', passport.authenticate('jwt', { session:  false }), (req, res) => {
-  
-  upload(req, res, function (err_upload) {
-    if (err_upload instanceof multer.MulterError) {
-        return res.status(500).json(err_upload)
-    } else if (err_upload) {
-      console.log(err_upload)
-        return res.status(500).json(err_upload)
-    }
-    
-      let filePath = 'public/'+req.file.filename
-      let sql = "LOAD DATA LOCAL INFILE '" +filePath+ "'  INTO TABLE t_efo  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\n' IGNORE 1 ROWS;"
- 
-      connection_pool.getConnection(function(error, conn) {
-        if (error) throw err; // not connected!
-    
-        conn.query(sql, (err, result) => {
-        // When done with the connection, release it.
-          conn.release();
-    
-          // Handle error after the release.
-          if (err){
-            console.log(err)
-            return  res.status(500).json({
-                    err: "true", 
-                    error: err.message,
-                    errno: err.errno,
-                    sql: err.sql,
-                    });
-          }else{
-            res.status(201).json({err: "false", error: "ok", arr: result})
-          }
-        });   
-      });
 
-  })
-
-});
 
 router.post('/truncate', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
   let sql = 'TRUNCATE TABLE ' + Object.keys(req.query).toString()
@@ -90,47 +54,7 @@ router.post('/truncate', passport.authenticate('jwt', { session:  false }), (req
 
 router.post('/t_efo', passport.authenticate('jwt', { session:  false }), (req,res) =>{
 
-  // "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 't_efo'"
-  // req.body = [{data: , autreData : }][...]
   
-  // let req_arr = Object.values(req.body).map((v) => Object.values(v.data).map((y) => y ));
-  // let sql = "INSERT INTO T_EFO "+
-  //               "("+
-  //               "`dc_individu_local`,`dc_structureprincipalede`,`dc_dernieragentreferent`,"+
-  //               "`dc_civilite`,`dc_nom`,`dc_prenom`,"+
-  //               "`dc_categorie`,`dc_situationde`,`dc_parcours`,"+
-  //               "`dc_telephone`,`dc_adresseemail`,`dc_statutaction_id`,"+
-  //               "`dc_formacode_id`,`dc_lblformacode`,`dd_datepreconisation`,"+
-  //               "`dt`,`libelle_ape`, `nom_ref`"+
-  //               ") VALUES ?"
-
-  // connection_pool.getConnection(function(error, conn) {
-  //   if (error) throw err; // not connected!
-
-  //   // Use the connection
-  //   conn.query(sql, [req_arr], (err, result) => {
-  //     // When done with the connection, release it.
-  //     conn.release();
-
-  //     // Handle error after the release.
-  //     if (err) {
-  //       // console.log(err)
-  //       return  res.status(500).json({
-  //               err: "true", 
-  //               error: err.message,
-  //               errno: err.errno,
-  //               sql: err.sql,
-  //               arr: req_arr,
-  //               });
-  //     }
-  //     else {
-  //       return  res
-  //               .status(201)
-  //               .json({err: "false", error: "ok", arr: req_arr, nb_ligne:result.affectedRows}
-  //       );
-  //     }
-  //   })
-  // });
   upload(req, res, function (err_upload) {
     if (err_upload instanceof multer.MulterError) {
         return res.status(500).json(err_upload)
@@ -138,10 +62,14 @@ router.post('/t_efo', passport.authenticate('jwt', { session:  false }), (req,re
       console.log(err_upload)
         return res.status(500).json(err_upload)
     }
-    
-      let filePath = 'public/'+req.file.filename
-      let sql = "LOAD DATA LOCAL INFILE '" +filePath+ "'  INTO TABLE t_efo  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\n' IGNORE 1 ROWS;"
- 
+    // console.log(req.file.filename)
+      let filePath = 'csv/'+req.file.filename
+      let sql = "LOAD DATA LOCAL INFILE '" +filePath+ "'  INTO TABLE T_EFO  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 LINES"
+      sql += '(dc_individu_local,dc_structureprincipalede,dc_dernieragentreferent,dc_civilite,dc_nom,dc_prenom,dc_categorie,dc_situationde,'
+      sql += 'dc_parcours,dc_telephone,dc_adresseemail,dc_statutaction_id,dc_formacode_id,dc_lblformacode,dd_datepreconisation,dt,libelle_ape,nom_ref);'
+      
+  //  console.log(sql)
+
       connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!
     
@@ -151,7 +79,7 @@ router.post('/t_efo', passport.authenticate('jwt', { session:  false }), (req,re
     
           // Handle error after the release.
           if (err){
-            console.log(err)
+            // console.log(err)
             return  res.status(500).json({
                     err: "true", 
                     error: err.message,
@@ -160,6 +88,7 @@ router.post('/t_efo', passport.authenticate('jwt', { session:  false }), (req,re
                     });
           }else{
             res.status(201).json({err: "false", error: "ok", arr: result})
+            
           }
         });   
       });
@@ -169,70 +98,7 @@ router.post('/t_efo', passport.authenticate('jwt', { session:  false }), (req,re
 
 router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false }), (req,res) =>{
 
-  // let req_arr = Object.values(req.body).map((v) => Object.values(v).map((value) => value===null?0:value));
-  // let req_arr = []
-  // console.log(Object.entries(req.body))
-  // for (key in req.body) {
-  //     req_arr.push(Object.values(req.body[key].data).map((v) => v===null?0:v));
-  // }
-
-  // let req_arr = Object.values(req.body).map((v) => Object.values(v.data).map((y) => y ));
-  // // con.query('TRUNCATE TABLE `t_portefeuille`')
-  // let sql = "INSERT INTO T_Portefeuille ("+
-  //                     "`dc_individu_local`,                 `dc_civilite`,              `dc_nom`, "+
-  //                     "`dc_prenom`,                         `dc_categorie`,             `dc_situationde`, "+
-  //                     "`dc_structureprincipalede`,          `dc_dernieragentreferent`,  `dc_parcours`, `dc_lblaxetravailprincipal`,"+
-  //                     "`dc_telephone`,                      `dc_adresseemail`,          `dc_listeromemetierrech`, "+
-  //                     "`dc_listeromeprojetmetier`,          `dc_listeromecreatreprise`, `dc_niveauformationmax`, "+
-  //                     "`dc_listelblmoyenlocomotion`,        `dc_presencecv`,    `dc_listepermis`,           `datejalonintermediaire`, "+
-  //                     "`dc_lblmotifjalonpersonnalise`,      `nbjouravantjalon`,         `nbjoursansentretien`, "+
-  //                     "`nbjoursanscontactsortantteloumel`,                              `nbjoursansformation`, "+
-  //                     "`type_presta`,                       `nbjoursanspresta`,         `nbjourinscrip`, "+
-  //                     "`nbjouraffectation`,                 `nbjourdepuisdpae`,         `colonne109`, "+
-  //                     "`colonne113`,                        `colonne117`,               `colonne122`, "+
-  //                     "`colonne127`,                        `colonne136`,               `colonne140`, "+
-  //                     "`colonne40`,                         `colonne41`,                `colonne42`, "+
-  //                     "`colonne43`,                         `colonne44`,                `colonne45`, "+
-  //                     "`colonne46`,                         `colonne47`,                `colonne48`, "+
-  //                     "`colonne49`,                         `colonne50`,                `colonne51`, "+
-  //                     "`colonne64`,                         `colonne65`,                `colonne66`, "+
-  //                     "`colonne80`,                         `colonne82`,                `colonne83`, "+
-  //                     "`colonne84`,                         `colonne85`,                `colonne86`, "+
-  //                     "`colonne95`,                         `colonne96`,                `colonne97`, "+
-  //                     "`colonne98`,                         `colonne99`,                `colonne143`, "+
-  //                     "`colonne144`,                        `colonne145`,               `colonne146`, "+
-  //                     "`colonne147`,                        `colonne160`,               `colonne163`, "+
-  //                     "`c_top_oreavalider`,                 `dt`,                       `libelle_ape`, "+
-  //                     "`rome_ore`,                          `tranche_age`"+
-  //                 ") VALUES ?"
-    
-  // connection_pool.getConnection(function(error, conn) {
-  //   if (error) throw err; // not connected!
-
-  //   // Use the connection
-  //   conn.query(sql, [req_arr], (err, result) => {
-  //     // When done with the connection, release it.
-  //     conn.release();
-
-  //     // Handle error after the release.
-  //     if (err) {
-  //       // console.log(err)
-  //       return  res.status(500).json({
-  //               err: "true", 
-  //               error: err.message,
-  //               errno: err.errno,
-  //               sql: err.sql,
-  //               arr: req_arr,
-  //               });
-  //     }
-  //     else {
-  //       return  res
-  //               .status(201)
-  //               .json({err: "false", error: "ok", arr: req_arr, nb_ligne:result.affectedRows}
-  //       );
-  //     }
-  //   })
-// });
+  
   upload(req, res, function (err_upload) {
     if (err_upload instanceof multer.MulterError) {
         return res.status(500).json(err_upload)
@@ -241,34 +107,38 @@ router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false })
         return res.status(500).json(err_upload)
     }
     
-      let filePath = 'public/'+req.file.filename
-      let sql = "LOAD DATA LOCAL INFILE '" +filePath+ "'  INTO TABLE t_portefeuille  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\n' IGNORE 1 ROWS;"
- 
-      connection_pool.getConnection(function(error, conn) {
-        if (error) throw err; // not connected!
-    
-        conn.query(sql, (err, result) => {
-        // When done with the connection, release it.
-          conn.release();
-    
-          // Handle error after the release.
-          if (err){
-            console.log(err)
-            return  res.status(500).json({
-                    err: "true", 
-                    error: err.message,
-                    errno: err.errno,
-                    sql: err.sql,
-                    });
-          }else{
-            res.status(201).json({err: "false", error: "ok", arr: result})
-          }
-        });   
-      });
+      let filePath = 'csv/'+req.file.filename
+      let sql = "LOAD DATA LOCAL INFILE '" +filePath+ "'  INTO TABLE T_Portefeuille  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 LINES"
+          sql += " SET nbjouravantjalon = nullif(nbjouravantjalon,'');"
+         
 
+        console.log(sql)   
+          
+        connection_pool.getConnection(function(error, conn) {
+          if (error) throw err; // not connected!
+      
+          conn.query(sql, (err, result) => {
+          // When done with the connection, release it.
+            conn.release();
+      
+            // Handle error after the release.
+            if (err){
+              // console.log(err)
+              return  res.status(500).json({
+                      err: "true", 
+                      error: err.message,
+                      errno: err.errno,
+                      sql: err.sql,
+                      });
+            }else{
+              res.status(201).json({err: "false", error: "ok", arr: result})
+              
+            }
+          });   
+        });
+  
+    })
   })
-
-
 
   // connection.query(sql, [req_arr], (err, result) => {
   //   if (err) {
@@ -288,9 +158,6 @@ router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false })
   //   }
   // })
 
-
-
-})
 
 router.post('/t_activites', passport.authenticate('jwt', { session:  false }), (req,res) =>{
   // let req_arr = Object.values(req.body).map((v) => Object.values(v).map((value) => value===null?0:value));
@@ -350,9 +217,67 @@ router.post('/t_activites', passport.authenticate('jwt', { session:  false }), (
         return res.status(500).json(err_upload)
     }
     
-      let filePath = 'public/'+req.file.filename
-      let sql = "LOAD DATA LOCAL INFILE '" +filePath+ "'  INTO TABLE T_Activites  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\n' IGNORE 1 ROWS;"
- 
+      let filePath = 'csv/'+req.file.filename
+      let sql = "LOAD DATA LOCAL INFILE '" +filePath+ "'  REPLACE INTO TABLE T_Activites  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 ROWS"
+           sql += "("
+              sql += "dc_agentreferent,"
+              sql += "nom_complet,"
+              sql += "dc_structureprincipalesuivi,"
+              sql += "dc_modalitesuiviaccomp_id,"
+              sql += "nb_de_affectes,"
+              sql += "contacts_phys,"
+              sql += "contacts_tel_entrant,"
+              sql += "contacts_tel_sortant,"
+              sql += "contacts_mail_entrant,"
+              sql += "contacts_mail_sortant,"
+              sql += "contacts_internet_entrant,"
+              sql += "contacts_internet_sortant,"
+              sql += "dem_de_trait_phys,"
+              sql += "dem_de_trait_tel,"
+              sql += "entretien_phys,"
+              sql += "entretien_tel,"
+              sql += "entretien_mail,"
+              sql += "entretien_dmc,"
+              sql += "mailnet_entrant,"
+              sql += "mailnet_sortant,"
+              sql += "contact_sortant,"
+              sql += "contact_entrant,"
+              sql += "dpae,"
+              sql += "presta_rca,"
+              sql += "presta_aem,"
+              sql += "presta_ap2,"
+              sql += "presta_z04,"
+              sql += "presta_atl,"
+              sql += "presta_atj,"
+              sql += "presta_c71,"
+              sql += "presta_z15,"
+              sql += "presta_ecc,"
+              sql += "presta_esp,"
+              sql += "presta_espr,"
+              sql += "presta_z07,"
+              sql += "presta_z08,"
+              sql += "presta_z10,"
+              sql += "presta_m06,"
+              sql += "presta_z18,"
+              sql += "presta_z13,"
+              sql += "presta_z12,"
+              sql += "presta_z17,"
+              sql += "presta_z02,"
+              sql += "presta_z16,"
+              sql += "presta_rgc,"
+              sql += "presta_m03,"
+              sql += "presta_m01,"
+              sql += "presta_vsi,"
+              sql += "presta,"
+              sql += "presta_acl,"
+              sql += "presta_emd,"
+              sql += "formation,"
+              sql += "annee,"
+              sql += "mois,"
+              sql += "dt,"
+              sql += "libelle_ape"
+        sql += ") ;"
+
       connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!
     
@@ -379,16 +304,26 @@ router.post('/t_activites', passport.authenticate('jwt', { session:  false }), (
 
 })
 
+//dates mise à jour tables
 router.get('/historicMAJ', (req, resp) => {
-  let sql = 'SELECT DATE_FORMAT(max(dateMAJ), " %d/%m/%Y") as Date, tableMAJ FROM miseajour GROUP BY tableMAJ ORDER BY tableMAJ'
+  let sql = 'SELECT DATE_FORMAT(MAX(dateMAJ), " %d/%m/%Y") as Date, tableMAJ FROM miseajour '
+  let fieldValue='';
 
-  // connection.query('SELECT COUNT(button) as Jalon FROM historic WHERE button = "Jalons"', (err, results) => {
+  //T_Portefeuille
+  if (req.query.tableMAJ) {
+    fieldValue = req.query.tableMAJ;
+    sql += ' WHERE tableMAJ = ? ';
+  }
+
+  sql += ' GROUP BY tableMAJ ORDER BY tableMAJ'
+  
+  console.log(sql)
 
   connection_pool.getConnection(function(error, conn) {
     if (error) throw err; // not connected!
 
     // Use the connection
-    conn.query(sql, (err, result) => {
+    conn.query(sql, [fieldValue], (err, result) => {
       // When done with the connection, release it.
       conn.release();
 
@@ -446,77 +381,78 @@ router.get('/historic', (req, resp) => {
 });
 
 
-router.get('/historicS', (req, resp) => {
-    let sql = 'SELECT COUNT(*), button as bt'
-        sql += ' FROM historic WHERE WEEK(date) = WEEK(curdate()) AND MONTH(date) = MONTH(CURDATE())'
-        sql += ' AND NOT idgasi = "a"'
-        sql += ' GROUP BY button'
-    // connection.query('SELECT COUNT(button) as Jalon FROM historic WHERE button = "Jalons"', (err, results) => {
-  connection_pool.getConnection(function(error, conn) {
-    if (error) throw err; // not connected!
+// router.get('/historicS', (req, resp) => {
+//     let sql = 'SELECT COUNT(*), button as bt'
+//         sql += ' FROM historic WHERE WEEK(date) = WEEK(curdate()) AND MONTH(date) = MONTH(CURDATE())'
+//         sql += ' AND NOT idgasi = "a"'
+//         sql += ' GROUP BY button'
+//     // connection.query('SELECT COUNT(button) as Jalon FROM historic WHERE button = "Jalons"', (err, results) => {
+//   connection_pool.getConnection(function(error, conn) {
+//     if (error) throw err; // not connected!
 
-    // Use the connection
-    conn.query(sql, (err, result) => {
-      // When done with the connection, release it.
-      conn.release();
+//     // Use the connection
+//     conn.query(sql, (err, result) => {
+//       // When done with the connection, release it.
+//       conn.release();
 
-      // Handle error after the release.
-      if (err) {
-        return  resp.status(500).json({
-                err: "true", 
-                error: err.message,
-                errno: err.errno,
-                sql: err.sql,
-                });
-      }
-      else {
-        return  resp
-                .status(201)
-                .json(result);
-      }
-    })
-  });
+//       // Handle error after the release.
+//       if (err) {
+//         return  resp.status(500).json({
+//                 err: "true", 
+//                 error: err.message,
+//                 errno: err.errno,
+//                 sql: err.sql,
+//                 });
+//       }
+//       else {
+//         return  resp
+//                 .status(201)
+//                 .json(result);
+//       }
+//     })
+//   });
 
-});
+// });
 
-router.get('/historicH', (req, resp) => {
-    let sql = 'SELECT COUNT(*), button'
-        sql += ' FROM historic WHERE MONTH(date) = MONTH(CURDATE())'
-        sql += ' AND NOT idgasi = "a"'
-        sql += ' GROUP BY button'
-    // connection.query('SELECT COUNT(button) as Jalon FROM historic WHERE button = "Jalons"', (err, results) => {
-  connection_pool.getConnection(function(error, conn) {
-    if (error) throw err; // not connected!
+// router.get('/historicH', (req, resp) => {
+//     let sql = 'SELECT COUNT(*), button'
+//         sql += ' FROM historic WHERE MONTH(date) = MONTH(CURDATE())'
+//         sql += ' AND NOT idgasi = "a"'
+//         sql += ' GROUP BY button'
+//     // connection.query('SELECT COUNT(button) as Jalon FROM historic WHERE button = "Jalons"', (err, results) => {
+//   connection_pool.getConnection(function(error, conn) {
+//     if (error) throw err; // not connected!
 
-    // Use the connection
-    conn.query(sql, (err, result) => {
-      // When done with the connection, release it.
-      conn.release();
+//     // Use the connection
+//     conn.query(sql, (err, result) => {
+//       // When done with the connection, release it.
+//       conn.release();
 
-      // Handle error after the release.
-      if (err) {
-        return  resp.status(500).json({
-                err: "true", 
-                error: err.message,
-                errno: err.errno,
-                sql: err.sql,
-                });
-      }
-      else {
-        return  resp
-                .status(201)
-                .json(result);
-      }
-    })
-  });
+//       // Handle error after the release.
+//       if (err) {
+//         return  resp.status(500).json({
+//                 err: "true", 
+//                 error: err.message,
+//                 errno: err.errno,
+//                 sql: err.sql,
+//                 });
+//       }
+//       else {
+//         return  resp
+//                 .status(201)
+//                 .json(result);
+//       }
+//     })
+//   });
 
-});
+// });
 
 
 router.get('/nbligne', (req, resp) => {
-  let sql = 'SELECT count(*) as efo from '
+  let sql = 'SELECT count(*) as nblig from '
   sql += Object.keys(req.query).toString().slice(1)
-  // connection.query('SELECT COUNT(button) as Jalon FROM historic WHERE button = "Jalons"', (err, results) => {
+ 
+console.log(sql)
 
   connection_pool.getConnection(function(error, conn) {
     if (error) throw err; // not connected!
