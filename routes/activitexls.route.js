@@ -222,8 +222,8 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
 
     let sql ="SELECT annee , mois , nom_complet, "
     sql+= " Sum(nb_de_affectes) AS nb_de_affectes, Sum(presta_rca) AS ACTIV_Créa, Sum(presta_aem) AS ACTIV_Emploi," 
-    sql += " Sum(presta_acp) AS ACTIV_Projet, Sum(presta_rgc) AS Regards_croisés, Sum(presta_vsi) AS Valoriser_son_image_pro,"
-    sql += " Sum(presta_z08+presta_z10+presta_z16) AS Vers1métier, Sum(presta) AS Presta, sum(presta) / Sum(nb_de_affectes) as tx_prestation"
+    sql += " Sum(presta_ap2) AS AP2, Sum(presta_rgc) AS Regards_croisés, Sum(presta_vsi) AS Valoriser_son_image_pro,"
+    sql += " Sum(presta_z08+presta_z10+presta_z16) AS Vers1métier, Sum(presta_acl) AS ACL, Sum(presta_emd) AS EMD, Sum(presta) AS Presta, sum(presta) / Sum(nb_de_affectes) as tx_prestation"
     // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
     sql+=" FROM T_Activites"
     
@@ -269,10 +269,12 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
                         { header: 'Nb DE affectes', key: 'nb_de_affectes'},
                         { header: 'ACTIV_Créa', key: 'ACTIV_Créa'},
                         { header: 'ACTIV_Emploi', key: 'ACTIV_Emploi'},
-                        { header: 'ACTIV_Projet', key: 'ACTIV_Projet'},
+                        { header: 'AP2', key: 'AP2'},
                         { header: 'Regards_croisés', key: 'Regards_croisés'},
                         { header: 'Valoriser_son_image_pro', key: 'Valoriser_son_image_pro'},
                         { header: 'Vers1métier', key: 'Vers1métier'},
+                        { header: 'ACL', key: 'ACL'},
+                        { header: 'EMD', key: 'EMD'},
                         { header: 'Presta', key: 'Presta'},
                         { header: 'Tx prestation', key: 'tx_prestation'}                
                     ];
@@ -294,7 +296,7 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
                       });
                     }
 
-                    worksheet.getColumn(12).eachCell((cell) => {
+                    worksheet.getColumn(14).eachCell((cell) => {
                         cell.numFmt = '0.0%';
                       });
                    
@@ -328,7 +330,6 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
     sql += " Sum(presta_z08+presta_z10+presta_z16) AS Vers1métier, Sum(presta_acl) AS ACL, Sum(presta_emd) AS EMD, Sum(presta) AS Presta, sum(presta) / Sum(nb_de_affectes) as tx_prestation"
     // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
     sql+=" FROM T_Activites"
-
 
     let sqlValues = [];
     
@@ -401,7 +402,7 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
                   });
                 }
 
-                worksheet.getColumn(12).eachCell((cell) => {
+                worksheet.getColumn(14).eachCell((cell) => {
                     cell.numFmt = '0.0%';
                   });
                   
