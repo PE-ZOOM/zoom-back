@@ -46,13 +46,12 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                         worksheet.columns = [
                             { header: 'IDE', key: 'dc_individu_local'},
                             { header: 'APE', key: 'dc_structureprincipalede'},
-                            { header: 'Référent', key: 'dc_dernieragentreferent'},
+                            { header: 'Référent', key: 'nom_ref'},
                             { header: 'Civilité', key: 'dc_civilite'},
                             { header: 'Nom', key: 'dc_nom'},
                             { header: 'Prénom', key: 'dc_prenom'},
                             { header: 'Catégorie', key: 'dc_categorie'},
-                            { header: 'Situation', key: 'dc_situationde'},
-                            { header: 'Parcours', key: 'dc_parcours'},
+                            { header: 'MSA', key: 'dc_parcours'},
                             { header: 'Mail', key: 'dc_adresseemail'},
                             { header: 'Tel', key: 'dc_telephone'}
 
@@ -115,9 +114,9 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     //     sql += ' FROM T_Portefeuille p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
     //     sql += ' WHERE p1.dc_situationde = 2'
 
-    let sql = "SELECT t2.dc_dernieragentreferent, CASE WHEN t1.nbDECriteres IS NULL THEN 0 ELSE t1.nbDECriteres END AS nbDECriteres, t2.nbDE, " 
+    let sql = "SELECT t2.nom_ref, CASE WHEN t1.nbDECriteres IS NULL THEN 0 ELSE t1.nbDECriteres END AS nbDECriteres, t2.nbDE, " 
         sql+= ' CASE WHEN (nbDECriteres / t2. nbDE) IS NULL THEN 0 ELSE nbDECriteres / t2. nbDE END AS tx FROM'
-        sql += '(SELECT dc_dernieragentreferent, count(dc_individu_local) as nbDECriteres'
+        sql += '(SELECT nom_ref, count(dc_individu_local) as nbDECriteres'
         sql += ' FROM T_Portefeuille'
         sql += ' WHERE dc_situationde = 2'    
 
@@ -145,8 +144,8 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         // sql+=' FROM T_Portefeuille p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
         // sql+=' WHERE p2.dc_situationde = 2'
 
-        sql+=' GROUP BY dc_dernieragentreferent) as t1 RIGHT JOIN '
-        sql+='(SELECT dc_dernieragentreferent, count(dc_individu_local) as nbDE '
+        sql+=' GROUP BY nom_ref) as t1 RIGHT JOIN '
+        sql+='(SELECT nom_ref, count(dc_individu_local) as nbDE '
         sql+=' FROM T_Portefeuille'
         sql+=' WHERE dc_situationde = 2'
 
@@ -169,7 +168,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
             })    
         
         // sql+=' GROUP BY p2.dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
-        sql+=' GROUP BY dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
+        sql+=' GROUP BY nom_ref) as t2 ON t2.nom_ref=t1.nom_ref'    
 
 
     //  console.log(sql)
@@ -192,7 +191,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                         let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]});; //creating worksheet
                         
                         worksheet.columns = [
-                            { header: 'Référent', key: 'dc_dernieragentreferent'},
+                            { header: 'Référent', key: 'nom_ref'},
                             { header: 'Nombre DE avec critères sélectionnés', key: 'nbDECriteres'},
                             { header: 'Nombre DE en portefeuille', key: 'nbDE'},
                             { header: 'Taux', key: 'tx'},
