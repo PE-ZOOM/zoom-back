@@ -96,6 +96,13 @@ router.post('/t_efo', passport.authenticate('jwt', { session:  false }), (req,re
   })
 })
 
+//fonction pour tester si query en cours
+// function verifquery (req,res) {
+//   sql='SELECT * FROM information_schema.innodb_trx t JOIN information_schema.processlist p ON t.trx_mysql_thread_id = p.id'
+// }
+
+
+
 router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false }), (req,res) =>{
 
   
@@ -108,22 +115,22 @@ router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false })
     }
     
       let filePath = 'csv/'+req.file.filename
-      let sql = "LOAD DATA LOCAL INFILE '" +filePath+ "'  INTO TABLE T_Portefeuille  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 LINES"
-          sql += " SET nbjouravantjalon = nullif(nbjouravantjalon,'');"
+      let sql = `LOAD DATA LOCAL INFILE '${filePath}' INTO TABLE T_Portefeuille  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 LINES;`
+      // sql += " SET nbjouravantjalon = nullif(nbjouravantjalon,'');"
          
 
-        console.log(sql)   
+         console.log(sql)   
           
         connection_pool.getConnection(function(error, conn) {
           if (error) throw err; // not connected!
-      
-          conn.query(sql, (err, result) => {
+          // conn.query({sql:sql,timeout: 100000}, (err, result) => {
+            conn.query(sql, (err, result) => {
           // When done with the connection, release it.
             conn.release();
       
             // Handle error after the release.
             if (err){
-              // console.log(err)
+
               return  res.status(500).json({
                       err: "true", 
                       error: err.message,
@@ -305,7 +312,7 @@ router.post('/t_activites', passport.authenticate('jwt', { session:  false }), (
 })
 
 //dates mise à jour tables
-router.get('/historicMAJ', (req, resp) => {
+router.get('/historicMAJ', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
   let sql = 'SELECT DATE_FORMAT(MAX(dateMAJ), " %d/%m/%Y") as Date, tableMAJ FROM miseajour '
   let fieldValue='';
 
@@ -348,7 +355,7 @@ router.get('/historicMAJ', (req, resp) => {
 
 
 
-router.get('/historic', (req, resp) => {
+router.get('/historic', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
   let sql = 'SELECT DISTINCT button'
       sql += ' FROM historic'
 
@@ -448,11 +455,11 @@ router.get('/historic', (req, resp) => {
 // });
 
 
-router.get('/nbligne', (req, resp) => {
+router.get('/nbligne', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
   let sql = 'SELECT count(*) as nblig from '
   sql += Object.keys(req.query).toString().slice(1)
  
-console.log(sql)
+// console.log(sql)
 
   connection_pool.getConnection(function(error, conn) {
     if (error) throw err; // not connected!
