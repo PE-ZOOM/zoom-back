@@ -115,11 +115,11 @@ router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false })
     }
     
       let filePath = 'csv/'+req.file.filename
-      let sql = `LOAD DATA LOCAL INFILE '${filePath}' INTO TABLE T_Portefeuille  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 LINES;`
-      // sql += " SET nbjouravantjalon = nullif(nbjouravantjalon,'');"
+      let sql = `LOAD DATA LOCAL INFILE '${filePath}' INTO TABLE T_Portefeuille  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 LINES`
+      sql += " SET nbjouravantjalon = nullif(nbjouravantjalon,'');"
          
 
-         console.log(sql)   
+        //  console.log(sql)   
           
         connection_pool.getConnection(function(error, conn) {
           if (error) throw err; // not connected!
@@ -313,7 +313,7 @@ router.post('/t_activites', passport.authenticate('jwt', { session:  false }), (
 
 //dates mise à jour tables
 router.get('/historicMAJ', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
-  let sql = 'SELECT DATE_FORMAT(MAX(dateMAJ), " %d/%m/%Y") as Date, tableMAJ FROM miseajour '
+  let sql = 'SELECT DATE_FORMAT(MAX(dateMAJ), "%d/%m/%Y") as dateMAJ, tableMAJ FROM miseajour '
   let fieldValue='';
 
   //T_Portefeuille
