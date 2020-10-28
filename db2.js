@@ -8,7 +8,7 @@ var pool  = mysql.createPool({
 });
 
 
-pool.query("select 1+1",(err,row)=>{});
+pool.query("SELECT 1 + 1",(err,row)=>{});
 
 pool.on('error', function(err) {
   console.log('db error', err);
@@ -21,8 +21,6 @@ pool.on('error', function(err) {
 
 
 module.exports = pool;
-
-
 
 
 // exports.connection = {
