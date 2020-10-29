@@ -4,7 +4,11 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const { check, validationResult } = require('express-validator');
-const connection       = require('./db');
+
+
+const connection_pool = require('./db2');
+// const connection       = require('./db');
+
 // Here we import all of the routing files
 const fonctionRouter   = require('./routes/fonction.route');
 const teamRouter       = require('./routes/team.route');
@@ -56,18 +60,29 @@ passport.use(
       sql += 'LEFT JOIN Team ON User.team_id = Team.id_team ';
       sql += 'LEFT JOIN APE ON User.ape_id = APE.id_ape ';
       sql += 'WHERE idgasi = ?';
-      connection.query(sql, [idgasi], function (err, result) {
-        // console.log(err); console.log(result);
-        if (err) return done(err);
-        if (!result.length) {
-          return done(null, false, { message: 'Invalid idgasi' });
-        }
-        if (bcrypt.compareSync(password, result[0].password)) {
-          return done(null, result[0]);
-        } else {
-          return done(null, false, { message: 'Password incorrect' });
-        }
+
+      connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+    
+        conn.query(sql, [idgasi], (err, result) => {
+        // When done with the connection, release it.
+          conn.release();
+    
+          // Handle error after the release.
+          if (err){
+            return done(err);
+          }if (!result.length) {
+            return done(null, false, { message: 'Invalid idgasi' });
+          }if (bcrypt.compareSync(password, result[0].password)) {
+            return done(null, result[0]);
+          }else{
+            return done(null, false, { message: 'Password incorrect' });
+          }
+    
+        // Don't use the connection here, it has been returned to the pool.
+        });   
       });
+
     },
   ),
 );
@@ -107,13 +122,14 @@ app.use((req, res, next) => {
 
 // The connection.connect is responsible for checking to see if we are connecting
 // to the database as expected
-connection.connect((err) => {
-  if (err) {
-    console.log(err);
-  } else {
-    console.log('You are connected to the database successfully');
-  }
-});
+
+// connection.connect((err) => {
+//   if (err) {
+//     console.log(err);
+//   } else {
+//     console.log('You are connected to the database successfully');
+//   }
+// });
 
 // routes
   // app.get('/', (res,req)=>{

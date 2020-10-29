@@ -50,7 +50,7 @@ router.get('/jalon', passport.authenticate('jwt', { session:  false }), (req,res
       // Handle error after the release.
       if (err){
         console.log(err)
-        return  res.status(500).json({
+        return  resp.status(500).json({
                 err: "true", 
                 error: err.message,
                 errno: err.errno,
@@ -99,7 +99,7 @@ router.get('/efo', passport.authenticate('jwt', { session:  false }), (req,resp)
       // Handle error after the release.
       if (err){
         console.log(err.sql)
-        return  res.status(500).json({
+        return  resp.status(500).json({
                 err: "true", 
                 error: err.message,
                 errno: err.errno,
@@ -151,7 +151,7 @@ router.get('/ore', passport.authenticate('jwt', { session:  false }), (req,resp)
       // Handle error after the release.
       if (err){
         console.log(err.sql)
-        return  res.status(500).json({
+        return  resp.status(500).json({
                 err: "true", 
                 error: err.message,
                 errno: err.errno,
