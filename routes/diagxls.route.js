@@ -35,7 +35,7 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     // Creation du tableau des filtres
 
-    let tab_filter = ['Mes filtres','']
+    let tab_filter = []
 
     let start = 0;
     let bool=false;
@@ -175,7 +175,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         // sql+=' GROUP BY p2.dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
         sql+=' GROUP BY nom_ref) as t2 ON t2.nom_ref=t1.nom_ref'    
 
-        let tab_filter = ['Mes filtres','']
+        let tab_filter = []
     
         let start = 0;
         let bool=false;
@@ -276,7 +276,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         // sql+=' GROUP BY p2.dc_structureprincipalede) as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'    
         sql+=' GROUP BY dc_structureprincipalede) as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'    
 
-        let tab_filter = ['Mes filtres','']
+        let tab_filter = []
     
         let start = 0;
         let bool=false;

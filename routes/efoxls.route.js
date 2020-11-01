@@ -20,7 +20,7 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql += ' FROM T_EFO'
 
     let sqlValues = [];
-    let tab_filter = ['Mes filtres','']
+    let tab_filter = [];
 
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         //datepreconisation 
@@ -120,7 +120,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+= ' FROM T_EFO p1'
  
     let sqlValues = [];
-    let tab_filter = ['Mes filtres','']
+    let tab_filter = [];
 
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
@@ -284,7 +284,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+= ' FROM T_EFO p1'
  
     let sqlValues = [];
-    let tab_filter = ['Mes filtres', '']
+    let tab_filter = [];
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
         //datepreconisation 

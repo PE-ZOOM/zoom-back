@@ -4,6 +4,7 @@ const router = express.Router();
 const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
+const xls = require('../modules/xls')
 
 
 //select excel contacts ref
@@ -17,16 +18,26 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
     sql+=" FROM T_Activites"
     
     let sqlValues = [];
-    
+    let tab_filter = [];
+
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
-                if (index === 0) {
-                    sql += ` WHERE ${key} = ?`
-                }
-                else {
-                    sql += ` AND ${key} = ?`
-        
-                } 
+            if (index === 0) {
+                sql += ` WHERE ${key} = ?`
+            }
+            else {
+                sql += ` AND ${key} = ?`
+    
+            }
+            if(key==='dc_structureprincipalesuivi'){
+                tab_filter.push('Structure = ' + query[key])
+            }else if(key==='dc_modalitesuiviaccomp_id'){
+                tab_filter.push('Modalité d\'accompagnement = ' + query[key])
+            }else if(key==='annee'){
+                tab_filter.push('Année ' + query[key])
+            }else if(key==='nom_complet'){
+                tab_filter.push('Référent = ' + query[key])
+            } 
             
             sqlValues.push(query[key])
         })
@@ -47,59 +58,33 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]}); //creating worksheet
-                
-                worksheet.columns = [
-                    { header: 'Année', key: 'annee'},
-                    { header: 'Mois', key: 'mois'},
-                    { header: 'Référent', key: 'nom_complet'},
-                    { header: 'Nb DE affectes', key: 'nb_de_affectes'},
-                    { header: 'GOA', key: 'GOA'},
-                    { header: '3949', key: 'Tel 3949'},
-                    { header: 'entretien phys', key: 'entretien_phys'},
-                    { header: 'entretien tel', key: 'entretien_tel'},
-                    { header: 'entretien mail', key: 'entretien_mail'},
-                    { header: 'entretien dmc', key: 'entretien_dmc'},
-                    { header: 'mailnet entrant', key: 'mailnet_entrant'},
-                    { header: 'mailnet sortant', key: 'mailnet_sortant'},
-                    { header: 'tx contact entrant', key: 'tx_contact_entrant'},
-                    { header: 'tx contact sortant', key: 'tx_contact_sortant'}
-                    
-                ];
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 8 ? 8 : column.header.length + 1
-                  })
+                        const jsonResult = JSON.parse(JSON.stringify(results));
 
-                
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'ContactRef.xlsx');  
 
-                worksheet.getColumn(13).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-                  worksheet.getColumn(14).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'contactREF.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
+                        let header = [
+                            { header: 'Année', key: 'annee'},
+                            { header: 'Mois', key: 'mois'},
+                            { header: 'Référent', key: 'nom_complet'},
+                            { header: 'Nb DE affectes', key: 'nb_de_affectes'},
+                            { header: 'GOA', key: 'GOA'},
+                            { header: '3949', key: 'Tel 3949'},
+                            { header: 'entretien phys', key: 'entretien_phys'},
+                            { header: 'entretien tel', key: 'entretien_tel'},
+                            { header: 'entretien mail', key: 'entretien_mail'},
+                            { header: 'entretien dmc', key: 'entretien_dmc'},
+                            { header: 'mailnet entrant', key: 'mailnet_entrant'},
+                            { header: 'mailnet sortant', key: 'mailnet_sortant'},
+                            { header: 'tx contact entrant', key: 'tx_contact_entrant'},
+                            { header: 'tx contact sortant', key: 'tx_contact_sortant'}
+                            
+                        ];
+                        
+                        return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                        .then(function() {
+                                resp.status(200).end();
+                        });
 
                     }
                 }
@@ -122,16 +107,26 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
     sql+=" FROM T_Activites"
     
     let sqlValues = [];
+    let tab_filter = [];
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
-                if (index === 0) {
-                    sql += ` WHERE ${key} = ?`
-                }
-                else {
-                    sql += ` AND ${key} = ?`
-        
-                } 
+            if (index === 0) {
+                sql += ` WHERE ${key} = ?`
+            }
+            else {
+                sql += ` AND ${key} = ?`
+    
+            } 
+            if(key==='dc_structureprincipalesuivi'){
+                tab_filter.push('Structure = ' + query[key])
+            }else if(key==='dc_modalitesuiviaccomp_id'){
+                tab_filter.push('Modalité d\'accompagnement = ' + query[key])
+            }else if(key==='annee'){
+                tab_filter.push('Année ' + query[key])
+            }else if(key==='nom_complet'){
+                tab_filter.push('Référent = ' + query[key])
+            } 
             
             sqlValues.push(query[key])
         })
@@ -152,59 +147,34 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]}); //creating worksheet
-                
-                worksheet.columns = [
-                    { header: 'Année', key: 'annee'},
-                    { header: 'Mois', key: 'mois' },
-                    { header: 'APE', key: 'dc_structureprincipalesuivi'},
-                    { header: 'Nb DE affectes', key: 'nb_de_affectes'},
-                    { header: 'GOA', key: 'GOA'},
-                    { header: '3949', key: 'Tel 3949'},
-                    { header: 'entretien phys', key: 'entretien_phys'},
-                    { header: 'entretien tel', key: 'entretien_tel'},
-                    { header: 'entretien mail', key: 'entretien_mail'},
-                    { header: 'entretien dmc', key: 'entretien_dmc'},
-                    { header: 'mailnet entrant', key: 'mailnet_entrant'},
-                    { header: 'mailnet sortant', key: 'mailnet_sortant'},
-                    { header: 'tx contact entrant', key: 'tx_contact_entrant'},
-                    { header: 'tx contact sortant', key: 'tx_contact_sortant'}
-                    
-                ];
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 8 ? 8 : column.header.length + 1
-                  })
+                        const jsonResult = JSON.parse(JSON.stringify(results));
 
-                
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'ContactApe.xlsx');  
 
-                worksheet.getColumn(13).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-                  worksheet.getColumn(14).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'contactAPE.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
-
+                        let header = [
+                            { header: 'Année', key: 'annee'},
+                            { header: 'Mois', key: 'mois' },
+                            { header: 'APE', key: 'dc_structureprincipalesuivi'},
+                            { header: 'Nb DE affectes', key: 'nb_de_affectes'},
+                            { header: 'GOA', key: 'GOA'},
+                            { header: '3949', key: 'Tel 3949'},
+                            { header: 'entretien phys', key: 'entretien_phys'},
+                            { header: 'entretien tel', key: 'entretien_tel'},
+                            { header: 'entretien mail', key: 'entretien_mail'},
+                            { header: 'entretien dmc', key: 'entretien_dmc'},
+                            { header: 'mailnet entrant', key: 'mailnet_entrant'},
+                            { header: 'mailnet sortant', key: 'mailnet_sortant'},
+                            { header: 'tx contact entrant', key: 'tx_contact_entrant'},
+                            { header: 'tx contact sortant', key: 'tx_contact_sortant'}
+                            
+                        ];
+                        
+                        return xls.CreateXls('APE', header, jsonResult, tab_filter).xlsx.write(resp)
+                        .then(function() {
+                                resp.status(200).end();
+                        });
+               
                     }
                 }
             })
@@ -228,16 +198,26 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
     sql+=" FROM T_Activites"
     
     let sqlValues = [];
+    let tab_filter = [];
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
-                if (index === 0) {
-                    sql += ` WHERE ${key} = ?`
-                }
-                else {
-                    sql += ` AND ${key} = ?`
-        
-                } 
+            if (index === 0) {
+                sql += ` WHERE ${key} = ?`
+            }
+            else {
+                sql += ` AND ${key} = ?`
+    
+            } 
+            if(key==='dc_structureprincipalesuivi'){
+                tab_filter.push('Structure = ' + query[key])
+            }else if(key==='dc_modalitesuiviaccomp_id'){
+                tab_filter.push('Modalité d\'accompagnement = ' + query[key])
+            }else if(key==='annee'){
+                tab_filter.push('Année ' + query[key])
+            }else if(key==='nom_complet'){
+                tab_filter.push('Référent = ' + query[key])
+            } 
             
             sqlValues.push(query[key])
         })
@@ -258,57 +238,33 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
                         if (!results.length) {
                             resp.status(404).send('datas not found')
                         } else {
-                    const jsonResult = JSON.parse(JSON.stringify(results));
-                    let workbook = new excel.Workbook(); //creating workbook
-                    let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]}); //creating worksheet
-                    
-                    worksheet.columns = [
-                        { header: 'Année', key: 'annee'},
-                        { header: 'Mois', key: 'mois'},
-                        { header: 'Référent', key: 'nom_complet'},
-                        { header: 'Nb DE affectes', key: 'nb_de_affectes'},
-                        { header: 'ACTIV_Créa', key: 'ACTIV_Créa'},
-                        { header: 'ACTIV_Emploi', key: 'ACTIV_Emploi'},
-                        { header: 'AP2', key: 'AP2'},
-                        { header: 'Regards_croisés', key: 'Regards_croisés'},
-                        { header: 'Valoriser_son_image_pro', key: 'Valoriser_son_image_pro'},
-                        { header: 'Vers1métier', key: 'Vers1métier'},
-                        { header: 'ACL', key: 'ACL'},
-                        { header: 'EMD', key: 'EMD'},
-                        { header: 'Presta', key: 'Presta'},
-                        { header: 'Tx prestation', key: 'tx_prestation'}                
-                    ];
+                            const jsonResult = JSON.parse(JSON.stringify(results));
 
-                    worksheet.columns.forEach(column => {
-                        column.width = column.header.length < 5 ? 10 : column.header.length + 4
-                      })
+                            resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                            resp.setHeader('Content-Disposition', 'attachment; filename=' + 'PrestaRef.xlsx');  
 
-                    worksheet.addRows(jsonResult);
-                    
-                    worksheet.getRow(1).eachCell((cell) => {
-                        cell.font = { bold: true };
-                      });
-                      for (let i =1; i<=worksheet.columns.length;i++){
-                      worksheet.getColumn(i).eachCell((cell) => {
-                        cell.border = {
-                            top: { style: 'thin' }, bottom: { style: 'thin' },
-                          };
-                      });
-                    }
-
-                    worksheet.getColumn(14).eachCell((cell) => {
-                        cell.numFmt = '0.0%';
-                      });
-                   
-      
-                    resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                    resp.setHeader('Content-Disposition', 'attachment; filename=' + 'prestaREF.xlsx');  
-                    return workbook.xlsx.write(resp)
-                    .then(function() {
-                          resp.status(200).end();
-                    });
-            
-
+                            let header = [
+                                { header: 'Année', key: 'annee'},
+                                { header: 'Mois', key: 'mois'},
+                                { header: 'Référent', key: 'nom_complet'},
+                                { header: 'Nb DE affectes', key: 'nb_de_affectes'},
+                                { header: 'ACTIV_Créa', key: 'ACTIV_Créa'},
+                                { header: 'ACTIV_Emploi', key: 'ACTIV_Emploi'},
+                                { header: 'AP2', key: 'AP2'},
+                                { header: 'Regards_croisés', key: 'Regards_croisés'},
+                                { header: 'Valoriser_son_image_pro', key: 'Valoriser_son_image_pro'},
+                                { header: 'Vers1métier', key: 'Vers1métier'},
+                                { header: 'ACL', key: 'ACL'},
+                                { header: 'EMD', key: 'EMD'},
+                                { header: 'Presta', key: 'Presta'},
+                                { header: 'Tx prestation', key: 'tx_prestation'}                
+                            ];
+                            
+                            return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
+                
                         }
                     }
             })
@@ -332,6 +288,7 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
     sql+=" FROM T_Activites"
 
     let sqlValues = [];
+    let tab_filter = [];
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
@@ -341,6 +298,15 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
                 else {
                     sql += ` AND ${key} = ?`
         
+                } 
+                if(key==='dc_structureprincipalesuivi'){
+                    tab_filter.push('Structure = ' + query[key])
+                }else if(key==='dc_modalitesuiviaccomp_id'){
+                    tab_filter.push('Modalité d\'accompagnement = ' + query[key])
+                }else if(key==='annee'){
+                    tab_filter.push('Année ' + query[key])
+                }else if(key==='nom_complet'){
+                    tab_filter.push('Référent = ' + query[key])
                 } 
             
             sqlValues.push(query[key])
@@ -363,56 +329,33 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]}); //creating worksheet
-                
-                worksheet.columns = [
-                    { header: 'Année', key: 'annee'},
-                    { header: 'Mois', key: 'mois' },
-                    { header: 'APE', key: 'dc_structureprincipalesuivi'},
-                    { header: 'Nb DE affectes', key: 'nb_de_affectes'},
-                    { header: 'ACTIV_Créa', key: 'ACTIV_Créa'},
-                    { header: 'ACTIV_Emploi', key: 'ACTIV_Emploi'},
-                    { header: 'AP2', key: 'AP2'},
-                    { header: 'Regards_croisés', key: 'Regards_croisés'},
-                    { header: 'Valoriser_son_image_pro', key: 'Valoriser_son_image_pro'},
-                    { header: 'Vers1métier', key: 'Vers1métier'},
-                    { header: 'ACL', key: 'ACL'},
-                    { header: 'EMD', key: 'EMD'},
-                    { header: 'Presta', key: 'Presta'},
-                    { header: 'Tx prestation', key: 'tx_prestation'} 
-                    
-                ];
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 4
-                  })
+                            const jsonResult = JSON.parse(JSON.stringify(results));
 
-                
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
+                            resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                            resp.setHeader('Content-Disposition', 'attachment; filename=' + 'PrestaApe.xlsx');  
 
-                worksheet.getColumn(14).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-                  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'prestaAPE.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
+                            let header = [
+                                { header: 'Année', key: 'annee'},
+                                { header: 'Mois', key: 'mois' },
+                                { header: 'APE', key: 'dc_structureprincipalesuivi'},
+                                { header: 'Nb DE affectes', key: 'nb_de_affectes'},
+                                { header: 'ACTIV_Créa', key: 'ACTIV_Créa'},
+                                { header: 'ACTIV_Emploi', key: 'ACTIV_Emploi'},
+                                { header: 'AP2', key: 'AP2'},
+                                { header: 'Regards_croisés', key: 'Regards_croisés'},
+                                { header: 'Valoriser_son_image_pro', key: 'Valoriser_son_image_pro'},
+                                { header: 'Vers1métier', key: 'Vers1métier'},
+                                { header: 'ACL', key: 'ACL'},
+                                { header: 'EMD', key: 'EMD'},
+                                { header: 'Presta', key: 'Presta'},
+                                { header: 'Tx prestation', key: 'tx_prestation'} 
+                                
+                            ];
+                            
+                            return xls.CreateXls('APE', header, jsonResult, tab_filter).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
 
                     }
                 }
