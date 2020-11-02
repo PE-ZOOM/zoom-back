@@ -4,6 +4,7 @@ const router = express.Router();
 const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
+const xls = require('../modules/xls')
 
 //select excel efo ide
 //http://localhost:5000/efoxlsx/ide?
@@ -19,7 +20,8 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql += ' FROM T_EFO'
 
     let sqlValues = [];
-    
+    let tab_filter = [];
+
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         //datepreconisation 
       if (key==='dd_datepreconisation') {
@@ -29,24 +31,30 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
         else {
             sql += ` AND ${key} > ? `
         } 
-      } else {
+        tab_filter.push('Date de préconisation > ' + query[key])
+        } else {
         
-        if (key==='dc_lblformacode') {
-            if (index === 0) {
-                sql += ` WHERE ${key} LIKE "%" ? "%"`
-            }
-            else {
-                sql += ` AND ${key} LIKE "%" ? "%"`
-            } 
-
-        } else  {
+            if (key==='dc_lblformacode') {
+                if (index === 0) {
+                    sql += ` WHERE ${key} LIKE "%" ? "%"`
+                }
+                else {
+                    sql += ` AND ${key} LIKE "%" ? "%"`
+                } 
+                tab_filter.push('Libelle Formation = ' + query[key])
+            }else  {
         
-            if (index === 0) {
+                if (index === 0) {
                     sql += ` WHERE ${key} = ?`
                 }
                 else {
                     sql += ` AND ${key} = ?`
                 } 
+                if(key==='dc_statutaction_id'){
+                    tab_filter.push('Satut = ' + query[key])
+                }else if(key==='nom_ref'){
+                    tab_filter.push('Référent = ' + query[key])
+                }
             }
         }
         sqlValues.push(query[key])
@@ -64,51 +72,33 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('IDE',{views: [{showGridLines: false}]});; //creating worksheet
-                worksheet.columns = [
-                    { header: 'IDE', key: 'dc_individu_local'},
-                    { header: 'APE', key: 'dc_structureprincipalede'},
-                    { header: 'Référent', key: 'nom_ref'},
-                    { header: 'Civilité', key: 'dc_civilite'},
-                    { header: 'Nom', key: 'dc_nom'},
-                    { header: 'Prénom', key: 'dc_prenom'},
-                    { header: 'Catégorie', key: 'dc_categorie'},
-                    { header: 'Situation', key: 'dc_situationde'},
-                    { header: 'MSA', key: 'dc_parcours'},
-                    { header: 'Mail', key: 'dc_adresseemail'},
-                    { header: 'Tel', key: 'dc_telephone'},
-                    { header: 'Statut Action', key: 'dc_statutaction_id'},
-                    { header: 'Formacode', key: 'dc_formacode_id'},
-                    { header: 'Libellé Formacode', key: 'dc_lblformacode'},
-                    { header: 'Date préconisation', key: 'french_datepreco'}
-                ];
+                        const jsonResult = JSON.parse(JSON.stringify(results));
 
-              
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 2
-                  })
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoIde.xlsx');  
 
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoIde.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
+                        let header = [
+                            { header: 'IDE', key: 'dc_individu_local'},
+                            { header: 'APE', key: 'dc_structureprincipalede'},
+                            { header: 'Référent', key: 'nom_ref'},
+                            { header: 'Civilité', key: 'dc_civilite'},
+                            { header: 'Nom', key: 'dc_nom'},
+                            { header: 'Prénom', key: 'dc_prenom'},
+                            { header: 'Catégorie', key: 'dc_categorie'},
+                            { header: 'Situation', key: 'dc_situationde'},
+                            { header: 'MSA', key: 'dc_parcours'},
+                            { header: 'Mail', key: 'dc_adresseemail'},
+                            { header: 'Tel', key: 'dc_telephone'},
+                            { header: 'Statut Action', key: 'dc_statutaction_id'},
+                            { header: 'Formacode', key: 'dc_formacode_id'},
+                            { header: 'Libellé Formacode', key: 'dc_lblformacode'},
+                            { header: 'Date préconisation', key: 'french_datepreco'}
+                        ];
+                        
+                        return xls.CreateXls('IDE', header, jsonResult, tab_filter).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
                     }
                 }
         })
@@ -130,7 +120,8 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+= ' FROM T_EFO p1'
  
     let sqlValues = [];
-    
+    let tab_filter = [];
+
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
         //datepreconisation 
@@ -141,6 +132,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         else {
             sql += ` AND p1.${key} > ? `
         } 
+        tab_filter.push('Date de préconisation > ' + query[key])
       } else {
         if (key==='dc_lblformacode') {
             if (index === 0) {
@@ -149,15 +141,22 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
             else {
                 sql += ` AND p1.${key} LIKE "%" ? "%"`
             }
+            tab_filter.push('Libelle de formation = ' + query[key])
         }
             
         else {    
         
-        if (index === 0) {
+            if (index === 0) {
                 sql += ` WHERE p1.${key} = ?`
             }
             else {
                 sql += ` AND p1.${key} = ?`
+            }
+                
+            if(key==='dc_statutaction_id'){
+                tab_filter.push('Satut = ' + query[key])
+            }else if(key==='nom_ref'){
+                tab_filter.push('Référent = ' + query[key])
             }
         }
     }
@@ -239,53 +238,29 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                 conn.release();
 
                 if (err) {
-                    console.log(err)
+                    // console.log(err)
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]});; //creating worksheet
-                worksheet.columns = [
-                    { header: 'Référent', key: 'nom_ref'},
-                    { header: "Nombre d'EFO", key: 'nbEFO'},
-                    { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
-                    { header: 'Nombre de DE', key: 'nbDE' },
-                    { header: 'Taux DE avec EFO', key: 'tx' },
-                    
-                ];
-                
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 10 ? 10 : column.header.length + 2
-                  })
+                        const jsonResult = JSON.parse(JSON.stringify(results));
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoREF.xlsx');  
 
-                
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
-
-                worksheet.getColumn(5).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-
-  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoREF.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
+                        let header = [
+                            { header: 'Référent', key: 'nom_ref'},
+                            { header: "Nombre d'EFO", key: 'nbEFO'},
+                            { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
+                            { header: 'Nombre de DE', key: 'nbDE' },
+                            { header: 'Taux DE avec EFO', key: 'tx' },
+                            
+                        ];
+                        
+                        return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
         
                     }
                 }
@@ -309,7 +284,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+= ' FROM T_EFO p1'
  
     let sqlValues = [];
-    
+    let tab_filter = [];
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
         //datepreconisation 
@@ -320,6 +295,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         else {
             sql += ` AND p1.${key} > ? `
         } 
+        tab_filter.push('Date de préconisation > ' + query[key])
       } else {
         if (key==='dc_lblformacode') {
             if (index === 0) {
@@ -328,15 +304,21 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
             else {
                 sql += ` AND p1.${key} LIKE "%" ? "%"`
             }
+            tab_filter.push('Libelle formation = ' + query[key])
         }
             
         else {    
         
-        if (index === 0) {
+            if (index === 0) {
                 sql += ` WHERE p1.${key} = ?`
             }
             else {
                 sql += ` AND p1.${key} = ?`
+            }
+            if(key==='dc_statutaction_id'){
+                tab_filter.push('Satut = ' + query[key])
+            }else if(key==='nom_ref'){
+                tab_filter.push('Référent = ' + query[key])
             }
         }}
         sqlValues.push(query[key])
@@ -420,55 +402,24 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]}); //creating worksheet
-             
-                worksheet.columns = [
-                    { header: 'APE', key: 'dc_structureprincipalede' },
-                    { header: "Nombre d'EFO", key: 'nbEFO' },
-                    { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
-                    { header: 'Nombre de DE', key: 'nbDE' },
-                    { header: 'Taux DE avec EFO', key: 'tx' },
-                    
-                ];
-                
-                
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 10 ? 10 : column.header.length + 2
-                  })
+                        const jsonResult = JSON.parse(JSON.stringify(results));
 
-                
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoREF.xlsx');  
 
-                worksheet.getColumn(5).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-
-                //   worksheet.autoFilter = {
-                //     from: 'A1',
-                //     to: 'E1',
-                // } 
-                
-
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoAPE.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
+                        let header = [
+                            { header: 'APE', key: 'dc_structureprincipalede' },
+                            { header: "Nombre d'EFO", key: 'nbEFO' },
+                            { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
+                            { header: 'Nombre de DE', key: 'nbDE' },
+                            { header: 'Taux DE avec EFO', key: 'tx' },
+                            
+                        ];
+                        
+                        return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
 
                     }
                 }
