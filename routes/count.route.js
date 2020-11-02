@@ -158,6 +158,56 @@ router.get('/efo', passport.authenticate('jwt', { session:  false }), (req,resp)
 );
 //END
 
+
+//list filter diag
+  //liste filter structure
+  //http://localhost:5000/count/listeape?
+  router.get('/listeape', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+    const query = req.query;
+ 
+    // let sql = 'SELECT DISTINCT dc_structureprincipalesuivi, APE.libelle_ape'
+    let sql = 'SELECT DISTINCT libelle_ape'
+        sql+= ' FROM T_Portefeuille'
+        
+        let sqlValues = [];
+
+        Object.keys(query).map((key, index) => {
+            if (index === 0) {
+                sql += ` WHERE ${key} = ?`
+            }
+            else {
+                sql += ` AND ${key} = ?`
+    
+            } 
+            sqlValues.push(query[key]) 
+        })
+    sql+= " ORDER BY libelle_ape"
+
+    connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+
+      conn.query(sql, sqlValues, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err.sqlMessage)
+          return  resp.status(500).json({
+                  err: "true", 
+                  error: err.message,
+                  errno: err.errno,
+                  sql: err.sql,
+                  });
+        }else{
+          resp.status(201).json(result)
+        }
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });
+})
+
 //count diag //important start by diag before user in url
 //http://localhost:5000/count/diag?colonne113=O
 router.get(
@@ -177,9 +227,13 @@ router.get(
 
     let sqlValues = [];
 
-    Object.keys(query).map((key, index) => {
-      sql += ` AND ${key} = ?`;
-      sqlValues.push(query[key]);
+    // Object.keys(query).map((key, index) => {
+    //   sql += ` AND ${key} = ?`;
+    //   sqlValues.push(query[key]);
+    // });
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+      sql += ` AND ${key} IN ( ? )`;
+      sqlValues.push(query[key].split(","));
     });
 
     sql += ') x , Diag WHERE x.name = Diag.name';

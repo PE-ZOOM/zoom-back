@@ -21,8 +21,8 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     let sqlValues = [];
     
     Object.keys(query).map((key, index) => {
-        sql += ` AND ${key} = ?`
-        sqlValues.push(query[key])
+        sql += ` AND ${key} IN ( ? )`;
+        sqlValues.push(query[key].split(","));
     })
 
     // console.log(sql)
@@ -134,8 +134,8 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     // })
     Object.keys(query).map((key, index) => {
-            sql += ` AND ${key} = ?`
-            sqlValues.push(query[key])
+        sql += ` AND ${key} IN ( ? )`;
+        sqlValues.push(query[key].split(","));
         }
        )
 
@@ -263,9 +263,9 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
     //     }
 
     // })
-    Object.keys(query).map((key, index) => {
-        sql += ` AND ${key} = ?`
-        sqlValues.push(query[key])
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        sql += ` AND ${key} IN ( ? )`;
+        sqlValues.push(query[key].split(","));
         
     })
 
