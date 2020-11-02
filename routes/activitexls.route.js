@@ -5,7 +5,7 @@ const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
 const xls = require('../modules/xls')
-
+const namecol = require('../modules/namefield')
 
 //select excel contacts ref
 //http://localhost:5000/activitexlsx/contacts/ref?
@@ -19,6 +19,9 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
     
     let sqlValues = [];
     let tab_filter = [];
+    let filter1by1 = '';
+    let libenclair = '';
+    
 
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
@@ -29,17 +32,10 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
                 sql += ` AND ${key} = ?`
     
             }
-            if(key==='dc_structureprincipalesuivi'){
-                tab_filter.push('Structure = ' + query[key])
-            }else if(key==='dc_modalitesuiviaccomp_id'){
-                tab_filter.push('Modalité d\'accompagnement = ' + query[key])
-            }else if(key==='annee'){
-                tab_filter.push('Année ' + query[key])
-            }else if(key==='nom_complet'){
-                tab_filter.push('Référent = ' + query[key])
-            } 
-            
             sqlValues.push(query[key])
+            libenclair=namecol.namefield(key)
+            filter1by1=`${libenclair}=${query[key]}`
+            tab_filter.push(filter1by1);
         })
     
     sql+= " GROUP BY annee, mois, nom_complet order by annee, mois, nom_complet desc"
@@ -108,6 +104,8 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
     
     let sqlValues = [];
     let tab_filter = [];
+    let filter1by1 = '';
+    let libenclair = '';
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
@@ -118,17 +116,10 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
                 sql += ` AND ${key} = ?`
     
             } 
-            if(key==='dc_structureprincipalesuivi'){
-                tab_filter.push('Structure = ' + query[key])
-            }else if(key==='dc_modalitesuiviaccomp_id'){
-                tab_filter.push('Modalité d\'accompagnement = ' + query[key])
-            }else if(key==='annee'){
-                tab_filter.push('Année ' + query[key])
-            }else if(key==='nom_complet'){
-                tab_filter.push('Référent = ' + query[key])
-            } 
-            
             sqlValues.push(query[key])
+            libenclair=namecol.namefield(key)
+            filter1by1=`${libenclair}=${query[key]}`
+            tab_filter.push(filter1by1);
         })
     
     sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee, mois, dc_structureprincipalesuivi desc"
@@ -199,6 +190,8 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
     
     let sqlValues = [];
     let tab_filter = [];
+    let filter1by1 = '';
+    let libenclair = '';
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
@@ -209,17 +202,11 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
                 sql += ` AND ${key} = ?`
     
             } 
-            if(key==='dc_structureprincipalesuivi'){
-                tab_filter.push('Structure = ' + query[key])
-            }else if(key==='dc_modalitesuiviaccomp_id'){
-                tab_filter.push('Modalité d\'accompagnement = ' + query[key])
-            }else if(key==='annee'){
-                tab_filter.push('Année ' + query[key])
-            }else if(key==='nom_complet'){
-                tab_filter.push('Référent = ' + query[key])
-            } 
-            
             sqlValues.push(query[key])
+            libenclair=namecol.namefield(key)
+            filter1by1=`${libenclair}=${query[key]}`
+            tab_filter.push(filter1by1);
+        
         })
     
     sql+= " GROUP BY annee, mois, nom_complet order by annee, mois, nom_complet desc"
@@ -289,6 +276,8 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
 
     let sqlValues = [];
     let tab_filter = [];
+    let filter1by1 = '';
+    let libenclair = '';
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
@@ -299,21 +288,17 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
                     sql += ` AND ${key} = ?`
         
                 } 
-                if(key==='dc_structureprincipalesuivi'){
-                    tab_filter.push('Structure = ' + query[key])
-                }else if(key==='dc_modalitesuiviaccomp_id'){
-                    tab_filter.push('Modalité d\'accompagnement = ' + query[key])
-                }else if(key==='annee'){
-                    tab_filter.push('Année ' + query[key])
-                }else if(key==='nom_complet'){
-                    tab_filter.push('Référent = ' + query[key])
-                } 
-            
             sqlValues.push(query[key])
+            libenclair=namecol.namefield(key)
+            filter1by1=`${libenclair}=${query[key]}`
+            tab_filter.push(filter1by1);
+       
         })
     
     sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee, mois, dc_structureprincipalesuivi desc"
     
+console.log(sql)
+console.log(sqlValues)
 
     connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!

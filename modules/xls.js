@@ -8,7 +8,7 @@ module.exports = {
         wsName      = Nom de la sheet
         header      = tableau d'objet entête [{name : ..., key : ...}, {name : ..., key : ...}]
         data  = résultat de la requête SQL
-        filter  = filtre utilisé (Si pasa de filtre, MyTable commence en 'A1')
+        filter  = filtre utilisé (Si pas de filtre, MyTable commence en 'A1')
 
     */
     CreateXls: function (wsName, header, data, filter){

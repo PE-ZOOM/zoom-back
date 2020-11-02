@@ -6,6 +6,7 @@ const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
 const xls = require('../modules/xls')
+const namecol = require('../modules/namefield')
 // const { response } = require('express');
 
 //select excel diag ide
@@ -20,43 +21,19 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql += ' WHERE dc_situationde = 2'
 
     let sqlValues = [];
+    let tab_filter = [];
+    let filter1by1=''
+    let libenclair=''
 
-    let filter = ''
     Object.keys(query).map((key, index) => {
-
-        if(key==='filter'){
-            filter = query[key]
-        }else{
          sql += ` AND ${key} IN ( ? )`;
-        sqlValues.push(query[key].split(","));
+        sqlValues.push(query[key].split(","))
+        libenclair=namecol.namefield(key)
+        filter1by1=`${libenclair}=${query[key]}`
+        tab_filter.push(filter1by1);
         }
+    )
 
-    })
-
-    // Creation du tableau des filtres
-
-    let tab_filter = []
-
-    let start = 0;
-    let bool=false;
-    
-    for(const i in filter){
-        if(filter[i]==='='){
-            bool=true
-        }
-        if(i<filter.length-5){
-            if(bool && filter[i]===','){
-                tab_filter.push(filter.slice(start, i))
-                start=parseInt(i)+1
-                bool=false
-            }
-        }else{
-            if(i==filter.length-1){
-                tab_filter.push(filter.slice(start, i+1))
-            }
-        }
-        
-    }
 
     connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!
@@ -132,21 +109,21 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql += ' FROM T_Portefeuille'
         sql += ' WHERE dc_situationde = 2'    
 
-    let sqlValues = [];
-    let filter = ''
-    
+        let sqlValues = [];
+        let tab_filter = [];
+        let filter1by1=''
+        let libenclair=''
+
     Object.keys(query).map((key, index) => {
-
-            if(key!=='filter'){
-                sql += ` AND ${key} IN ( ? )`;
-                sqlValues.push(query[key].split(","));
-            }else{
-                filter = query[key]
-
+         sql += ` AND ${key} IN ( ? )`;
+        sqlValues.push(query[key].split(","))
+        libenclair=namecol.namefield(key)
+        filter1by1=`${libenclair}=${query[key]}`
+        tab_filter.push(filter1by1);
         }
-       )
-
-        // sql+=' GROUP BY p1.dc_dernieragentreferent) as t1 RIGHT JOIN '
+    )
+    
+               // sql+=' GROUP BY p1.dc_dernieragentreferent) as t1 RIGHT JOIN '
         // sql+='(SELECT p2.dc_dernieragentreferent, count(p2.dc_individu_local) as nbDE '
         // sql+=' FROM T_Portefeuille p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
         // sql+=' WHERE p2.dc_situationde = 2'
@@ -156,18 +133,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+=' FROM T_Portefeuille'
         sql+=' WHERE dc_situationde = 2'
 
-        // Object.keys(query).filter((key) => key==='dc_dernieragentreferent' || key==='dc_structureprincipalede' || key==='dt').map((key, index) => {
-        //         if (key==='dt') {
-        //             sql += ` AND a2.${key} = ?`
-        //             sqlValues.push(query[key])
-        //         }
-        //         else {
-        //         sql += ` AND p2.${key} = ?`
-        //         sqlValues.push(query[key])
-        //         }
         
-        //     })
-
         Object.keys(query).filter((key) => key==='dc_dernieragentreferent' || key==='dc_structureprincipalede' || key==='dt').map((key, index) => {
                 sql += ` AND ${key} = ?`
                 sqlValues.push(query[key])
@@ -176,29 +142,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
         // sql+=' GROUP BY p2.dc_dernieragentreferent) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'    
         sql+=' GROUP BY nom_ref) as t2 ON t2.nom_ref=t1.nom_ref'    
 
-        let tab_filter = []
-    
-        let start = 0;
-        let bool=false;
-    
-        for(const i in filter){
-            if(filter[i]==='='){
-                bool=true
-            }
-            if(i<filter.length-5){
-                if(bool && filter[i]===','){
-                    tab_filter.push(filter.slice(start, i))
-                    start=parseInt(i)+1
-                    bool=false
-                }
-            }else{
-                if(i==filter.length-1){
-                    tab_filter.push(filter.slice(start, i+1))
-                }
-            }
-            
-        }
-
+        
     connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!
 
@@ -253,19 +197,19 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql += ' FROM T_Portefeuille'
         sql += ' WHERE dc_situationde = 2'    
 
-    let sqlValues = [];
+        let sqlValues = [];
+        let tab_filter = [];
+        let libenclair=''
 
-    let filter = ''
-
-    OObject.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
-        if(key!=='filter'){
-           sql += ` AND ${key} IN ( ? )`;
-           sqlValues.push(query[key].split(","));
-        }else{
-            filter = query[key]
+    Object.keys(query).map((key, index) => {
+         sql += ` AND ${key} IN ( ? )`;
+        sqlValues.push(query[key].split(","))
+        libenclair=namecol.namefield(key)
+        filter1by1=`${libenclair}=${query[key]}`
+        tab_filter.push(filter1by1);
         }
+    )
 
-    })
         sql+=' GROUP BY dc_structureprincipalede) as t1 RIGHT JOIN '
         sql+='(SELECT dc_structureprincipalede, count(dc_individu_local) as nbDE '
         sql+=' FROM T_Portefeuille'
@@ -279,29 +223,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         // sql+=' GROUP BY p2.dc_structureprincipalede) as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'    
         sql+=' GROUP BY dc_structureprincipalede) as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'    
 
-        let tab_filter = []
-    
-        let start = 0;
-        let bool=false;
-    
-        for(const i in filter){
-            if(filter[i]==='='){
-                bool=true
-            }
-            if(i<filter.length-5){
-                if(bool && filter[i]===','){
-                    tab_filter.push(filter.slice(start, i))
-                    start=parseInt(i)+1
-                    bool=false
-                }
-            }else{
-                if(i==filter.length-1){
-                    tab_filter.push(filter.slice(start, i+1))
-                }
-            }
-            
-        }
-
+        
     connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!
 

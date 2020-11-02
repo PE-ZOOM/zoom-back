@@ -5,6 +5,7 @@ const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
 const xls = require('../modules/xls')
+const namecol = require('../modules/namefield')
 
 //select excel efo ide
 //http://localhost:5000/efoxlsx/ide?
@@ -21,6 +22,8 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     let sqlValues = [];
     let tab_filter = [];
+    let filter1by1='';
+    let libenclair='';
 
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         //datepreconisation 
@@ -41,7 +44,7 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                 else {
                     sql += ` AND ${key} LIKE "%" ? "%"`
                 } 
-                tab_filter.push('Libelle Formation = ' + query[key])
+                tab_filter.push('Libelle Formation contient ' + query[key])
             }else  {
         
                 if (index === 0) {
@@ -50,15 +53,15 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                 else {
                     sql += ` AND ${key} = ?`
                 } 
-                if(key==='dc_statutaction_id'){
-                    tab_filter.push('Satut = ' + query[key])
-                }else if(key==='nom_ref'){
-                    tab_filter.push('Référent = ' + query[key])
-                }
+                libenclair=namecol.namefield(key)
+                filter1by1=`${libenclair}=${query[key]}`
+                tab_filter.push(filter1by1);
+                
             }
         }
         sqlValues.push(query[key])
     })
+
 
     // console.log(sql)
     connection_pool.getConnection(function(error, conn) {
@@ -121,6 +124,8 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
  
     let sqlValues = [];
     let tab_filter = [];
+    let filter1by1='';
+    let libenclair='';
 
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
@@ -141,7 +146,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
             else {
                 sql += ` AND p1.${key} LIKE "%" ? "%"`
             }
-            tab_filter.push('Libelle de formation = ' + query[key])
+            tab_filter.push('Libelle de formation contient ' + query[key])
         }
             
         else {    
@@ -153,11 +158,9 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p1.${key} = ?`
             }
                 
-            if(key==='dc_statutaction_id'){
-                tab_filter.push('Satut = ' + query[key])
-            }else if(key==='nom_ref'){
-                tab_filter.push('Référent = ' + query[key])
-            }
+                libenclair=namecol.namefield(key)
+                filter1by1=`${libenclair}=${query[key]}`
+                tab_filter.push(filter1by1);
         }
     }
         sqlValues.push(query[key])
@@ -285,6 +288,8 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
  
     let sqlValues = [];
     let tab_filter = [];
+    let filter1by1='';
+    libenclair='';
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
         //datepreconisation 
@@ -315,11 +320,9 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
             else {
                 sql += ` AND p1.${key} = ?`
             }
-            if(key==='dc_statutaction_id'){
-                tab_filter.push('Satut = ' + query[key])
-            }else if(key==='nom_ref'){
-                tab_filter.push('Référent = ' + query[key])
-            }
+                libenclair=namecol.namefield(key)
+                filter1by1=`${libenclair}=${query[key]}`
+                tab_filter.push(filter1by1);
         }}
         sqlValues.push(query[key])
     })
