@@ -21,16 +21,16 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 
     let sqlValues = [];
 
-
     let filter = ''
     Object.keys(query).map((key, index) => {
+
         if(key==='filter'){
             filter = query[key]
         }else{
-            sql += ` AND ${key} = ?`
-            sqlValues.push(query[key])
+         sql += ` AND ${key} IN ( ? )`;
+        sqlValues.push(query[key].split(","));
         }
-        
+
     })
 
     // Creation du tableau des filtres
@@ -136,12 +136,13 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     let filter = ''
     
     Object.keys(query).map((key, index) => {
+
             if(key!=='filter'){
-                sql += ` AND ${key} = ?`
-                sqlValues.push(query[key])
+                sql += ` AND ${key} IN ( ? )`;
+                sqlValues.push(query[key].split(","));
             }else{
                 filter = query[key]
-            }
+
         }
        )
 
@@ -253,15 +254,17 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql += ' WHERE dc_situationde = 2'    
 
     let sqlValues = [];
+
     let filter = ''
 
-    Object.keys(query).map((key, index) => {
+    OObject.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         if(key!=='filter'){
-            sql += ` AND ${key} = ?`
-            sqlValues.push(query[key])
+           sql += ` AND ${key} IN ( ? )`;
+           sqlValues.push(query[key].split(","));
         }else{
             filter = query[key]
         }
+
     })
         sql+=' GROUP BY dc_structureprincipalede) as t1 RIGHT JOIN '
         sql+='(SELECT dc_structureprincipalede, count(dc_individu_local) as nbDE '
