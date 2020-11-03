@@ -104,8 +104,9 @@ router.post('/t_efo', passport.authenticate('jwt', { session:  false }), (req,re
 
 
 router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false }), (req,res) =>{
-
   
+  // res.setTimeout(0)
+
   upload(req, res, function (err_upload) {
     if (err_upload instanceof multer.MulterError) {
         return res.status(500).json(err_upload)
@@ -118,16 +119,15 @@ router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false })
       let sql = `LOAD DATA LOCAL INFILE '${filePath}' INTO TABLE T_Portefeuille  FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 LINES`
       sql += " SET nbjouravantjalon = nullif(nbjouravantjalon,'');"
          
-
         //  console.log(sql)   
           
         connection_pool.getConnection(function(error, conn) {
           if (error) throw err; // not connected!
-          // conn.query({sql:sql,timeout: 100000}, (err, result) => {
+           //conn.query({sql:sql,timeout: 0}, (err, result) => {
             conn.query(sql, (err, result) => {
           // When done with the connection, release it.
             conn.release();
-      
+
             // Handle error after the release.
             if (err){
 
@@ -138,6 +138,7 @@ router.post('/t_portefeuille', passport.authenticate('jwt', { session:  false })
                       sql: err.sql,
                       });
             }else{
+
               res.status(201).json({err: "false", error: "ok", arr: result})
               
             }
@@ -486,6 +487,8 @@ router.get('/nbligne', passport.authenticate('jwt', { session:  false }), (req,r
     })
   });
 });
+
+
 
 
 router.post('/maj', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
