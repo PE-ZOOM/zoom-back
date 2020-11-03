@@ -1,9 +1,10 @@
 
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
+const xls = require('../modules/xls')
 
 //select excel jalon ide
 //http://localhost:5000/jalonxlsx/ide?
@@ -12,7 +13,7 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     const int1= [0,30];
     const int2= [int1[1] + 1, 60];
 
-    let sql = 'SELECT *,'
+    let sql = "SELECT *, DATE_FORMAT(datejalonintermediaire,'%d/%m/%Y') AS french_datejalon, "
     sql += ' CASE'
     sql += ' WHEN nbjouravantjalon IS NULL THEN "Sans Jalons"'
     sql += ' WHEN nbjouravantjalon < 0 THEN "Jalons dépassés"'
@@ -21,7 +22,8 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     sql += ` WHEN nbjouravantjalon > ${int2[1]} THEN "> ${int2[1]} jours"`
     sql += ' ELSE "jalons"'
     sql += ' END AS textnbjouravantjalon'
-    sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    // sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    sql += ' FROM T_Portefeuille'
     sql += ' WHERE dc_situationde = 2 AND nbjouravantjalon IS NOT NULL'
 
     
@@ -32,61 +34,93 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
         sqlValues.push(query[key])
     })
 
-    connection.query(sql, sqlValues, (err, results) => {
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+        conn.query(sql, sqlValues, (err, results) => {
+                conn.release();
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('IDE',{views: [{showGridLines: false}]});; //creating worksheet
-                worksheet.columns = [
-                    { header: 'Motif Jalon', key: 'dc_lblmotifjalonpersonnalise' },
-                    { header: 'APE', key: 'dc_structureprincipalede'},
-                    { header: 'Référent', key: 'dc_dernieragentreferent'},
-                    { header: 'IDE', key: 'dc_individu_local'},
-                    { header: 'Civilité', key: 'dc_civilite'},
-                    { header: 'Nom', key: 'dc_nom'},
-                    { header: 'Prénom', key: 'dc_prenom'},
-                    { header: 'Catégorie', key: 'dc_categorie'},
-                    { header: 'Situation', key: 'dc_situationde'},
-                    { header: 'Parcours', key: 'dc_parcours'},
-                    { header: 'Mail', key: 'dc_adresseemail'},
-                    { header: 'Tel', key: 'dc_telephone'},
-                    { header: 'Interval jalon', key: 'textnbjouravantjalon'},
-                ];
+                        const jsonResult = JSON.parse(JSON.stringify(results));
 
-               
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 2
-                  })
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'jalonIde.xlsx');  
 
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'jalonIde.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
+                        let header =  [
+                            { header: 'Motif Jalon', key: 'dc_lblmotifjalonpersonnalise' },
+                            { header: 'APE', key: 'dc_structureprincipalede'},
+                            { header: 'Référent', key: 'nom_ref'},
+                            { header: 'IDE', key: 'dc_individu_local'},
+                            { header: 'Civilité', key: 'dc_civilite'},
+                            { header: 'Nom', key: 'dc_nom'},
+                            { header: 'Prénom', key: 'dc_prenom'},
+                            { header: 'Catégorie', key: 'dc_categorie'},
+                            { header: 'Situation', key: 'dc_situationde'},
+                            { header: 'MSA', key: 'dc_parcours'},
+                            { header: 'Mail', key: 'dc_adresseemail'},
+                            { header: 'Tel', key: 'dc_telephone'},
+                            { header: 'Interval jalon', key: 'textnbjouravantjalon'},
+                            { header: 'Date Jalon intermédiaire', key: 'french_datejalon'}
+
+                        ];
+                        
+                        return xls.CreateXls('IDE', header, jsonResult).xlsx.write(resp)
+                        .then(function() {
+                                resp.status(200).end();
+                        });
+
+
+                        // let workbook = new excel.Workbook(); //creating workbook
+                        // let worksheet = workbook.addWorksheet('IDE',{views: [{showGridLines: false}]});; //creating worksheet
+                        // worksheet.columns = [
+                        //     { header: 'Motif Jalon', key: 'dc_lblmotifjalonpersonnalise' },
+                        //     { header: 'APE', key: 'dc_structureprincipalede'},
+                        //     { header: 'Référent', key: 'nom_ref'},
+                        //     { header: 'IDE', key: 'dc_individu_local'},
+                        //     { header: 'Civilité', key: 'dc_civilite'},
+                        //     { header: 'Nom', key: 'dc_nom'},
+                        //     { header: 'Prénom', key: 'dc_prenom'},
+                        //     { header: 'Catégorie', key: 'dc_categorie'},
+                        //     { header: 'Situation', key: 'dc_situationde'},
+                        //     { header: 'MSA', key: 'dc_parcours'},
+                        //     { header: 'Mail', key: 'dc_adresseemail'},
+                        //     { header: 'Tel', key: 'dc_telephone'},
+                        //     { header: 'Interval jalon', key: 'textnbjouravantjalon'},
+                        // ];
+
+                       
+                        // worksheet.columns.forEach(column => {
+                        //     column.width = column.header.length < 5 ? 10 : column.header.length + 2
+                        //   })
+
+                        // worksheet.addRows(jsonResult);
+                        
+                        // worksheet.getRow(1).eachCell((cell) => {
+                        //     cell.font = { bold: true };
+                        //   });
+                        //   for (let i =1; i<=worksheet.columns.length;i++){
+                        //   worksheet.getColumn(i).eachCell((cell) => {
+                        //     cell.border = {
+                        //         top: { style: 'thin' }, bottom: { style: 'thin' },
+                        //       };
+                        //   });
+                        // }
+                        // resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        // resp.setHeader('Content-Disposition', 'attachment; filename=' + 'jalonIde.xlsx');  
+                        // return workbook.xlsx.write(resp)
+                        // .then(function() {
+                        //       resp.status(200).end();
+                        // });
         
                     }
                 }
-            })
         })
-
+    });
+})
 //END
 
 //select excel jalon ref
@@ -121,7 +155,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
     const int1= [0,30];
     const int2= [int1[1] + 1, 60];
 
-let sql = 'SELECT x.dc_lblmotifjalonpersonnalise, x.dc_dernieragentreferent,'    
+let sql = 'SELECT x.dc_lblmotifjalonpersonnalise, x.nom_ref,'    
 sql+=` MAX(CASE WHEN x.textnbjouravantjalon = "Sans Jalons" THEN x.nb ELSE 0 END) "Sans Jalons",`
 sql+=` MAX(CASE WHEN x.textnbjouravantjalon = "Jalons dépassés" THEN x.nb ELSE 0 END) "Jalons dépassés",`
 sql+=` MAX(CASE WHEN x.textnbjouravantjalon = "Entre ${int1[0]} et ${int1[1]} jours" THEN x.nb ELSE 0 END) "Entre ${int1[0]} et ${int1[1]} jours",`
@@ -130,7 +164,7 @@ sql+=` MAX(CASE WHEN x.textnbjouravantjalon = "> ${int2[1]} jours" THEN x.nb ELS
 sql+=` SUM(x.nb) Total`
 sql+=' FROM ('
 
-    sql += 'SELECT dc_lblmotifjalonpersonnalise, dc_dernieragentreferent,'
+    sql += 'SELECT dc_lblmotifjalonpersonnalise, nom_ref,'
     sql += ' CASE'
     sql += ' WHEN nbjouravantjalon < 0 THEN "Jalons dépassés"'
     sql += ` WHEN nbjouravantjalon BETWEEN ${int1[0]} AND ${int1[1]} THEN "Entre ${int1[0]} et ${int1[1]} jours"`
@@ -139,7 +173,8 @@ sql+=' FROM ('
     sql += ' ELSE "jalons"'
     sql += ' END AS textnbjouravantjalon,'
     sql += ' COUNT(dc_individu_local) AS nb'
-    sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    // sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    sql += ' FROM T_Portefeuille'
     sql += ' WHERE dc_situationde = 2 AND nbjouravantjalon IS NOT NULL' 
 
     //DR Admin
@@ -164,65 +199,50 @@ sql+=' FROM ('
         sql += ' AND  dt = ? '
       }
    
-    sql += ' GROUP BY dc_lblmotifjalonpersonnalise, dc_dernieragentreferent, textnbjouravantjalon) x'
-    sql += ' GROUP BY x.dc_lblmotifjalonpersonnalise, x.dc_dernieragentreferent'
+    sql += ' GROUP BY dc_lblmotifjalonpersonnalise, nom_ref, textnbjouravantjalon) x'
+    sql += ' GROUP BY x.dc_lblmotifjalonpersonnalise, x.nom_ref'
 
     // console.log(sql)
-    connection.query(sql, [fieldValue], (err, results) => {
-        if (err) {
-            resp.status(500).send('Internal server error')
-        } else {
-            if (!results.length) {
-                resp.status(404).send('datas not found')
+
+    connection_pool.getConnection(function(error, conn) {
+    if (error) throw err; // not connected!
+
+        conn.query(sql, [fieldValue], (err, results) => {
+            conn.release();
+            if (err) {
+                resp.status(500).send('Internal server error')
             } else {
-        const jsonResult = JSON.parse(JSON.stringify(results));
-        let workbook = new excel.Workbook(); //creating workbook
-        let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]}); //creating worksheet
-        worksheet.columns = [
-            { header: 'Motif jalon', key: 'dc_lblmotifjalonpersonnalise'},
-            { header: 'Référent', key: 'dc_dernieragentreferent' },
-            { header: 'Jalons dépassés', key: 'Jalons dépassés'},
-            { header: `Entre ${int1[0]} et ${int1[1]} jours`, key: `Entre ${int1[0]} et ${int1[1]} jours`},
-            { header: `Entre ${int2[0]} et ${int2[1]} jours`, key: `Entre ${int2[0]} et ${int2[1]} jours`},
-            { header: `> ${int2[1]} jours`, key: `> ${int2[1]} jours` },
-            { header: 'Total', key:'Total'}
-        ];
+                if (!results.length) {
+                    resp.status(404).send('datas not found')
+                } else {
+                    const jsonResult = JSON.parse(JSON.stringify(results));
 
-        worksheet.columns.forEach(column => {
-            column.width = column.header.length < 10 ? 10 : column.header.length + 2
-          })
+                    resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    resp.setHeader('Content-Disposition', 'attachment; filename=' + 'jalonRef.xlsx');  
 
-        
-        worksheet.addRows(jsonResult);
-        
-        worksheet.getRow(1).eachCell((cell) => {
-            cell.font = { bold: true };
-          });
-          for (let i =1; i<=worksheet.columns.length;i++){
-          worksheet.getColumn(i).eachCell((cell) => {
-            cell.border = {
-                top: { style: 'thin' }, bottom: { style: 'thin' },
-              };
-          });
-        }
+                    let header =  [
+                        { header: 'Motif jalon', key: 'dc_lblmotifjalonpersonnalise'},
+                        { header: 'Référent', key: 'nom_ref' },
+                        { header: 'Jalons dépassés', key: 'Jalons dépassés'},
+                        { header: `Entre ${int1[0]} et ${int1[1]} jours`, key: `Entre ${int1[0]} et ${int1[1]} jours`},
+                        { header: `Entre ${int2[0]} et ${int2[1]} jours`, key: `Entre ${int2[0]} et ${int2[1]} jours`},
+                        { header: `> ${int2[1]} jours`, key: `> ${int2[1]} jours` },
+                        { header: 'Total', key:'Total'}
+                    ];
+                    
+                    return xls.CreateXls('REF', header, jsonResult).xlsx.write(resp)
+                    .then(function() {
+                            resp.status(200).end();
+                    });
 
-        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'jalonRef.xlsx');  
-        return workbook.xlsx.write(resp)
-        .then(function() {
-              resp.status(200).end();
-        });
-
+                }
             }
-        }
-
-
-    })
-
+        })
+    });
 })
 //END
 
-//select excel jalon ref
+//select excel jalon ape
 //http://localhost:5000/jalonxlsx/ape?
 router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp) => {
     const query = req.query;
@@ -249,7 +269,8 @@ sql+=' FROM ('
     sql += ' ELSE "jalons"'
     sql += ' END AS textnbjouravantjalon,'
     sql += ' COUNT(dc_individu_local) AS nb'
-    sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    // sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    sql += ' FROM T_Portefeuille'
     sql += ' WHERE dc_situationde = 2 AND nbjouravantjalon IS NOT NULL' 
 
     //DR Admin
@@ -278,56 +299,41 @@ sql+=' FROM ('
     sql += ' GROUP BY x.dc_lblmotifjalonpersonnalise, x.dc_structureprincipalede'
 
     // console.log(sql)
-    connection.query(sql, [fieldValue], (err, results) => {
-        if (err) {
-            resp.status(500).send('Internal server error')
-        } else {
-            if (!results.length) {
-                resp.status(404).send('datas not found')
+        connection_pool.getConnection(function(error, conn) {
+    if (error) throw err; // not connected!
+
+        conn.query(sql, [fieldValue], (err, results) => {
+            conn.release();
+            if (err) {
+                resp.status(500).send('Internal server error')
             } else {
-        const jsonResult = JSON.parse(JSON.stringify(results));
-        let workbook = new excel.Workbook(); //creating workbook
-        let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]}); //creating worksheet
-        worksheet.columns = [
-            { header: 'Motif jalon', key: 'dc_lblmotifjalonpersonnalise'},
-            { header: 'APE', key: 'dc_structureprincipalede' },
-            { header: 'Jalons dépassés', key: 'Jalons dépassés'},
-            { header: `Entre ${int1[0]} et ${int1[1]} jours`, key: `Entre ${int1[0]} et ${int1[1]} jours`},
-            { header: `Entre ${int2[0]} et ${int2[1]} jours`, key: `Entre ${int2[0]} et ${int2[1]} jours`},
-            { header: `> ${int2[1]} jours`, key: `> ${int2[1]} jours` },
-            { header: 'Total', key:'Total'}
-        ];
+                if (!results.length) {
+                    resp.status(404).send('datas not found')
+                } else {
+                    const jsonResult = JSON.parse(JSON.stringify(results));
 
-        worksheet.columns.forEach(column => {
-            column.width = column.header.length < 10 ? 10 : column.header.length + 2
-          })
+                    resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    resp.setHeader('Content-Disposition', 'attachment; filename=' + 'jalonApe.xlsx');  
 
-        
-        worksheet.addRows(jsonResult);
-        
-        worksheet.getRow(1).eachCell((cell) => {
-            cell.font = { bold: true };
-          });
-          for (let i =1; i<=worksheet.columns.length;i++){
-          worksheet.getColumn(i).eachCell((cell) => {
-            cell.border = {
-                top: { style: 'thin' }, bottom: { style: 'thin' },
-              };
-          });
-        }
-        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'jalonRef.xlsx');  
-        return workbook.xlsx.write(resp)
-        .then(function() {
-              resp.status(200).end();
-        });
+                    let header =  [
+                        { header: 'Motif jalon', key: 'dc_lblmotifjalonpersonnalise'},
+                        { header: 'APE', key: 'dc_structureprincipalede' },
+                        { header: 'Jalons dépassés', key: 'Jalons dépassés'},
+                        { header: `Entre ${int1[0]} et ${int1[1]} jours`, key: `Entre ${int1[0]} et ${int1[1]} jours`},
+                        { header: `Entre ${int2[0]} et ${int2[1]} jours`, key: `Entre ${int2[0]} et ${int2[1]} jours`},
+                        { header: `> ${int2[1]} jours`, key: `> ${int2[1]} jours` },
+                        { header: 'Total', key:'Total'}
+                    ];
+                    
+                    return xls.CreateXls('APE', header, jsonResult).xlsx.write(resp)
+                    .then(function() {
+                            resp.status(200).end();
+                    });
 
+                }
             }
-        }
-
-
-    })
-
+        })
+    });
 })
 //END
 

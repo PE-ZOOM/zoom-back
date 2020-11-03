@@ -5,7 +5,7 @@ const router = express.Router();
 const connection_pool = require('../db2');
 
 
-// GET - Retrieve all of the data from table ape
+// GET - Retrieve all of the data from table ape sans passeport parce qu'avant connexion user
 router.get('/', (req, resp) => {
     let sql = 'SELECT id_ape, libelle_ape FROM APE';
     // connection.query('SELECT id_ape, libelle_ape FROM APE', (err, results) => {
@@ -44,10 +44,12 @@ router.get('/', (req, resp) => {
       // Don't use the connection here, it has been returned to the pool.
       });   
     });
-
-
-
   });
     
+
+  
+  
+
+
 
 module.exports = router;

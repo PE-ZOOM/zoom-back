@@ -1,9 +1,11 @@
 
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection_pool = require('../db2');
 const passport = require('passport');
 const excel = require('exceljs');
+const xls = require('../modules/xls')
+const namecol = require('../modules/namefield')
 
 //select excel efo ide
 //http://localhost:5000/efoxlsx/ide?
@@ -11,91 +13,100 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     const query = req.query;
    
     let sql = ""
-        sql += "SELECT *, DATE_FORMAT(dd_datepreconisation,'%d/%m/%Y') AS french_datepreco "
-        sql += ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+        sql += "SELECT dc_individu_local,dc_structureprincipalede,nom_ref,dc_civilite,"
+        sql += "dc_nom, dc_prenom,dc_categorie,dc_situationde,dc_parcours,dc_adresseemail,dc_telephone,"
+        sql += "dc_statutaction_id,dc_formacode_id, dc_lblformacode,"
+        sql += "DATE_FORMAT(dd_datepreconisation,'%d/%m/%Y') AS french_datepreco "
+        // sql += ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
+        sql += ' FROM T_EFO'
 
     let sqlValues = [];
-    
-    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
-        
-        if (key==='dc_lblformacode') {
-            if (index === 0) {
-                sql += ` WHERE ${key} LIKE "%" ? "%"`
-            }
-            else {
-                sql += ` AND ${key} LIKE "%" ? "%"`
-            } 
+    let tab_filter = [];
+    let filter1by1='';
+    let libenclair='';
 
-        } else  {
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE ${key} > ? `
+        }
+        else {
+            sql += ` AND ${key} > ? `
+        } 
+        tab_filter.push('Date de préconisation > ' + query[key])
+        } else {
         
+            if (key==='dc_lblformacode') {
+                if (index === 0) {
+                    sql += ` WHERE ${key} LIKE "%" ? "%"`
+                }
+                else {
+                    sql += ` AND ${key} LIKE "%" ? "%"`
+                } 
+                tab_filter.push('Libelle Formation contient ' + query[key])
+            }else  {
         
-            if (index === 0) {
+                if (index === 0) {
                     sql += ` WHERE ${key} = ?`
                 }
                 else {
                     sql += ` AND ${key} = ?`
                 } 
+                libenclair=namecol.namefield(key)
+                filter1by1=`${libenclair}=${query[key]}`
+                tab_filter.push(filter1by1);
+                
             }
+        }
         sqlValues.push(query[key])
     })
 
+
     // console.log(sql)
-    connection.query(sql, sqlValues, (err, results) => {
+    connection_pool.getConnection(function(error, conn) {
+    if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+            conn.release();
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('IDE',{views: [{showGridLines: false}]});; //creating worksheet
-                worksheet.columns = [
-                    { header: 'IDE', key: 'dc_individu_local'},
-                    { header: 'APE', key: 'dc_structureprincipalede'},
-                    { header: 'Référent', key: 'dc_dernieragentreferent'},
-                    { header: 'Civilité', key: 'dc_civilite'},
-                    { header: 'Nom', key: 'dc_nom'},
-                    { header: 'Prénom', key: 'dc_prenom'},
-                    { header: 'Catégorie', key: 'dc_categorie'},
-                    { header: 'Situation', key: 'dc_situationde'},
-                    { header: 'Parcours', key: 'dc_parcours'},
-                    { header: 'Mail', key: 'dc_adresseemail'},
-                    { header: 'Tel', key: 'dc_telephone'},
-                    { header: 'Statut Action', key: 'dc_statutaction_id'},
-                    { header: 'Formacode', key: 'dc_formacode_id'},
-                    { header: 'Libellé Formacode', key: 'dc_lblformacode'},
-                    { header: 'Date préconisation', key: 'french_datepreco'}
-                ];
+                        const jsonResult = JSON.parse(JSON.stringify(results));
 
-              
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 5 ? 10 : column.header.length + 2
-                  })
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoIde.xlsx');  
 
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoIde.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
+                        let header = [
+                            { header: 'IDE', key: 'dc_individu_local'},
+                            { header: 'APE', key: 'dc_structureprincipalede'},
+                            { header: 'Référent', key: 'nom_ref'},
+                            { header: 'Civilité', key: 'dc_civilite'},
+                            { header: 'Nom', key: 'dc_nom'},
+                            { header: 'Prénom', key: 'dc_prenom'},
+                            { header: 'Catégorie', key: 'dc_categorie'},
+                            { header: 'Situation', key: 'dc_situationde'},
+                            { header: 'MSA', key: 'dc_parcours'},
+                            { header: 'Mail', key: 'dc_adresseemail'},
+                            { header: 'Tel', key: 'dc_telephone'},
+                            { header: 'Statut Action', key: 'dc_statutaction_id'},
+                            { header: 'Formacode', key: 'dc_formacode_id'},
+                            { header: 'Libellé Formacode', key: 'dc_lblformacode'},
+                            { header: 'Date préconisation', key: 'french_datepreco'}
+                        ];
+                        
+                        return xls.CreateXls('IDE', header, jsonResult, tab_filter).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
                     }
                 }
-            })
         })
+    });
+})
 
 //END
 
@@ -103,104 +114,85 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
 //http://localhost:5000/efoxlsx/ref?
 router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp) => {
     const query = req.query;
-
-//     Select t3.dc_dernieragentreferent, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,
-//     CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,
-//     nbDEEFO / t3. nbDE  as tx 
-    
-//     FROM
-// (SELECT p1.dc_dernieragentreferent, count(p1.dc_individu_local) as nbEFO
-//  FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape
-//  WHERE p1.dc_structureprincipalede = 97801 and p1.dc_statutaction_id='O'
-//  Group BY p1.dc_dernieragentreferent) as t1 INNER JOIN 
-
-//  (SELECT x.dc_dernieragentreferent, count(x.dc_individu_local) as nbDEEFO
-// FROM 
-//     (SELECT DISTINCT p2.dc_individu_local, p2.dc_dernieragentreferent
-//     FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape
-//     WHERE p2.dc_structureprincipalede = 97801 and p2.dc_statutaction_id='O'
-//     ) x
-//  Group by x.dc_dernieragentreferent 
-//  ) as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent
-
-//     RIGHT JOIN 
-//         (SELECT p3.dc_dernieragentreferent, count(p3.dc_individu_local) as nbDE 
-//          FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape
-//          WHERE p3.dc_structureprincipalede = 97801
-//          GROUP BY p3.dc_dernieragentreferent
-//         ) as t3 ON t3.dc_dernieragentreferent=t1.dc_dernieragentreferent 
-
-
-    let sql = 'Select t3.dc_dernieragentreferent, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,'
+    let sql = ''
+        sql+= 'Select t3.nom_ref, CASE WHEN t1.nbEFO  IS NULL THEN 0 ELSE t1.nbEFO END AS nbEFO,'
         sql+= ' CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,'
         sql+= ' CASE WHEN (nbDEEFO / t3. nbDE) IS NULL  THEN 0 ELSE nbDEEFO / t3. nbDE END AS tx FROM'
-        sql+= '(SELECT p1.dc_dernieragentreferent, count(p1.dc_individu_local) as nbEFO'
-        sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+        sql+= '(SELECT p1.nom_ref, count(p1.dc_individu_local) as nbEFO'
+        // sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+        sql+= ' FROM T_EFO p1'
  
     let sqlValues = [];
-    
+    let tab_filter = [];
+    let filter1by1='';
+    let libenclair='';
+
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE p1.${key} > ? `
+        }
+        else {
+            sql += ` AND p1.${key} > ? `
+        } 
+        tab_filter.push('Date de préconisation > ' + query[key])
+      } else {
         if (key==='dc_lblformacode') {
             if (index === 0) {
                 sql += ` WHERE p1.${key} LIKE "%" ? "%"`
             }
             else {
                 sql += ` AND p1.${key} LIKE "%" ? "%"`
-            } 
-
-        } else  {
-
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE a1.${key} = ?`
             }
-            else {
-                sql += ` AND a1.${key} = ?`
-    
-            } 
+            tab_filter.push('Libelle de formation contient ' + query[key])
         }
-        else {
+            
+        else {    
+        
             if (index === 0) {
                 sql += ` WHERE p1.${key} = ?`
             }
             else {
                 sql += ` AND p1.${key} = ?`
-    
-            } 
+            }
+                
+                libenclair=namecol.namefield(key)
+                filter1by1=`${libenclair}=${query[key]}`
+                tab_filter.push(filter1by1);
         }
     }
         sqlValues.push(query[key])
     })
 
-    sql+=' GROUP BY p1.dc_dernieragentreferent) as t1 INNER JOIN'
-    sql+=' (SELECT x.dc_dernieragentreferent, count(x.dc_individu_local) as nbDEEFO FROM'
-    sql+=' (SELECT DISTINCT p2.dc_individu_local, p2.dc_dernieragentreferent'
-    sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+    sql+=' GROUP BY p1.nom_ref) as t1 INNER JOIN'
+    sql+=' (SELECT x.nom_ref, count(x.dc_individu_local) as nbDEEFO FROM'
+    sql+=' (SELECT DISTINCT p2.dc_individu_local, p2.nom_ref'
+    // sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+    sql+=' FROM T_EFO p2'
    
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
-        
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE p2.${key} > ? `
+        }
+        else {
+            sql += ` AND p2.${key} > ? `
+        } 
+      } else { 
         if (key==='dc_lblformacode') {
             if (index === 0) {
                 sql += ` WHERE p2.${key} LIKE "%" ? "%"`
             }
             else {
                 sql += ` AND p2.${key} LIKE "%" ? "%"`
-            } 
-
-        } else  {
-
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE a2.${key} = ?`
             }
-            else {
-                sql += ` AND a2.${key} = ?`
-    
-            } 
         }
-        else {
+            
+        else { 
             if (index === 0) {
                 sql += ` WHERE p2.${key} = ?`
             }
@@ -208,30 +200,21 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p2.${key} = ?`
     
             } 
-        }
-    }
+        }}
         sqlValues.push(query[key])
     })
     
 
-    sql+=') x Group by x.dc_dernieragentreferent'
-    sql+=') as t2 ON t2.dc_dernieragentreferent=t1.dc_dernieragentreferent'
+    sql+=') x Group by x.nom_ref'
+    sql+=') as t2 ON t2.nom_ref=t1.nom_ref'
     sql+=' RIGHT JOIN'
-    sql+=' (SELECT p3.dc_dernieragentreferent, count(p3.dc_individu_local) as nbDE'
-    sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
+    sql+=' (SELECT p3.nom_ref, count(p3.dc_individu_local) as nbDE'
+    // sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
+    sql+=' FROM T_Portefeuille p3'
 
-    Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_lblformacode').map((key, index) => {
+    Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_lblformacode' && key!=='dd_datepreconisation').map((key, index) => {
         
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE a3.${key} = ?`
-            }
-            else {
-                sql += ` AND a3.${key} = ?`
-    
-            } 
-        }
-        else {
+        
             if (index === 0) {
                 sql += ` WHERE p3.${key} = ?`
             }
@@ -239,69 +222,54 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p3.${key} = ?`
     
             } 
-        }
+        
         sqlValues.push(query[key])
     })
 
-   sql+=' GROUP BY p3.dc_dernieragentreferent'
-   sql+=') as t3 ON t3.dc_dernieragentreferent=t1.dc_dernieragentreferent' 
-    
+   sql+=' GROUP BY p3.nom_ref'
+   sql+=') as t3 ON t3.nom_ref=t1.nom_ref'
 
-    // console.log(sql)
-    // console.log(sqlValues)
-    connection.query(sql, sqlValues, (err, results) => {
+   
+
+//    console.log(sql)
+//    console.log(sqlValues)
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+                conn.release();
+
                 if (err) {
+                    // console.log(err)
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('REF',{views: [{showGridLines: false}]});; //creating worksheet
-                worksheet.columns = [
-                    { header: 'Référent', key: 'dc_dernieragentreferent'},
-                    { header: "Nombre d'EFO", key: 'nbEFO'},
-                    { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
-                    { header: 'Nombre de DE', key: 'nbDE' },
-                    { header: 'Taux DE avec EFO', key: 'tx' },
-                    
-                ];
-                worksheet.addRows(jsonResult);
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 10 ? 10 : column.header.length + 2
-                  })
+                        const jsonResult = JSON.parse(JSON.stringify(results));
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoREF.xlsx');  
 
-                
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
-
-                worksheet.getColumn(5).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-
-  
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoREF.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
+                        let header = [
+                            { header: 'Référent', key: 'nom_ref'},
+                            { header: "Nombre d'EFO", key: 'nbEFO'},
+                            { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
+                            { header: 'Nombre de DE', key: 'nbDE' },
+                            { header: 'Taux DE avec EFO', key: 'tx' },
+                            
+                        ];
+                        
+                        return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
         
                     }
                 }
-            })
         })
+    });
+})
                 
 
 //END
@@ -315,51 +283,77 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
         sql+= ' CASE WHEN t2.nbDEEFO  IS NULL THEN 0 ELSE t2.nbDEEFO END AS nbDEEFO, t3.nbDE,'
         sql+= ' CASE WHEN (nbDEEFO / t3. nbDE) IS NULL  THEN 0 ELSE nbDEEFO / t3. nbDE END AS tx FROM'
         sql+= '(SELECT p1.dc_structureprincipalede, count(p1.dc_individu_local) as nbEFO'
-        sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+        // sql+= ' FROM T_EFO p1 INNER JOIN APE a1 ON p1.dc_structureprincipalede = a1.id_ape'
+        sql+= ' FROM T_EFO p1'
  
     let sqlValues = [];
-    
+    let tab_filter = [];
+    let filter1by1='';
+    libenclair='';
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
         
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE a1.${key} = ?`
-            }
-            else {
-                sql += ` AND a1.${key} = ?`
-    
-            } 
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE p1.${key} > ? `
         }
         else {
+            sql += ` AND p1.${key} > ? `
+        } 
+        tab_filter.push('Date de préconisation > ' + query[key])
+      } else {
+        if (key==='dc_lblformacode') {
+            if (index === 0) {
+                sql += ` WHERE p1.${key} LIKE "%" ? "%"`
+            }
+            else {
+                sql += ` AND p1.${key} LIKE "%" ? "%"`
+            }
+            tab_filter.push('Libelle formation = ' + query[key])
+        }
+            
+        else {    
+        
             if (index === 0) {
                 sql += ` WHERE p1.${key} = ?`
             }
             else {
                 sql += ` AND p1.${key} = ?`
-    
-            } 
-        }
+            }
+                libenclair=namecol.namefield(key)
+                filter1by1=`${libenclair}=${query[key]}`
+                tab_filter.push(filter1by1);
+        }}
         sqlValues.push(query[key])
     })
 
     sql+=' GROUP BY p1.dc_structureprincipalede) as t1 INNER JOIN'
     sql+=' (SELECT x.dc_structureprincipalede, count(x.dc_individu_local) as nbDEEFO FROM'
     sql+=' (SELECT DISTINCT p2.dc_individu_local, p2.dc_structureprincipalede'
-    sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+    // sql+=' FROM T_EFO p2 INNER JOIN APE a2 ON p2.dc_structureprincipalede = a2.id_ape'
+    sql+=' FROM T_EFO p2'
    
     
     Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
-        
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE a2.${key} = ?`
-            }
-            else {
-                sql += ` AND a2.${key} = ?`
-    
-            } 
+        //datepreconisation 
+      if (key==='dd_datepreconisation') {
+        if (index === 0) {
+            sql += ` WHERE p2.${key} > ? `
         }
         else {
+            sql += ` AND p2.${key} > ? `
+        } 
+      } else { 
+        if (key==='dc_lblformacode') {
+            if (index === 0) {
+                sql += ` WHERE p2.${key} LIKE "%" ? "%"`
+            }
+            else {
+                sql += ` AND p2.${key} LIKE "%" ? "%"`
+            }
+        }
+            
+        else { 
             if (index === 0) {
                 sql += ` WHERE p2.${key} = ?`
             }
@@ -367,7 +361,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p2.${key} = ?`
     
             } 
-        }
+        }}
         sqlValues.push(query[key])
     })
     
@@ -376,20 +370,12 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
     sql+=') as t2 ON t2.dc_structureprincipalede=t1.dc_structureprincipalede'
     sql+=' RIGHT JOIN'
     sql+=' (SELECT p3.dc_structureprincipalede, count(p3.dc_individu_local) as nbDE'
-    sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
+    // sql+=' FROM T_Portefeuille p3 INNER JOIN APE a3 ON p3.dc_structureprincipalede = a3.id_ape'
+    sql+=' FROM T_Portefeuille p3'
 
-    Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_formacode_id').map((key, index) => {
+    Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id' && key!=='dc_lblformacode' && key!=='dd_datepreconisation').map((key, index) => {
         
-        if (key==='dt') {
-            if (index === 0) {
-                sql += ` WHERE a3.${key} = ?`
-            }
-            else {
-                sql += ` AND a3.${key} = ?`
-    
-            } 
-        }
-        else {
+        
             if (index === 0) {
                 sql += ` WHERE p3.${key} = ?`
             }
@@ -397,7 +383,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
                 sql += ` AND p3.${key} = ?`
     
             } 
-        }
+        
         sqlValues.push(query[key])
     })
 
@@ -405,70 +391,44 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
    sql+=') as t3 ON t3.dc_structureprincipalede=t1.dc_structureprincipalede' 
     
 
-    // console.log(sql)
-    // console.log(sqlValues)
-    connection.query(sql, sqlValues, (err, results) => {
+    //  console.log(sql)
+    //  console.log(sqlValues)
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+        conn.query(sql, sqlValues, (err, results) => {
+            conn.release();
                 if (err) {
                     resp.status(500).send('Internal server error')
                 } else {
                     if (!results.length) {
                         resp.status(404).send('datas not found')
                     } else {
-                const jsonResult = JSON.parse(JSON.stringify(results));
-                let workbook = new excel.Workbook(); //creating workbook
-                let worksheet = workbook.addWorksheet('APE',{views: [{showGridLines: false}]}); //creating worksheet
-             
-                worksheet.columns = [
-                    { header: 'APE', key: 'dc_structureprincipalede' },
-                    { header: "Nombre d'EFO", key: 'nbEFO' },
-                    { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
-                    { header: 'Nombre de DE', key: 'nbDE' },
-                    { header: 'Taux DE avec EFO', key: 'tx' },
-                    
-                ];
-                
-                
-                worksheet.columns.forEach(column => {
-                    column.width = column.header.length < 10 ? 10 : column.header.length + 2
-                  })
+                        const jsonResult = JSON.parse(JSON.stringify(results));
 
-                
-                worksheet.addRows(jsonResult);
-                
-                worksheet.getRow(1).eachCell((cell) => {
-                    cell.font = { bold: true };
-                  });
-                  for (let i =1; i<=worksheet.columns.length;i++){
-                  worksheet.getColumn(i).eachCell((cell) => {
-                    cell.border = {
-                        top: { style: 'thin' }, bottom: { style: 'thin' },
-                      };
-                  });
-                }
+                        resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                        resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoREF.xlsx');  
 
-                worksheet.getColumn(5).eachCell((cell) => {
-                    cell.numFmt = '0.0%';
-                  });
-
-                //   worksheet.autoFilter = {
-                //     from: 'A1',
-                //     to: 'E1',
-                // } 
-                
-
-                resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                resp.setHeader('Content-Disposition', 'attachment; filename=' + 'efoAPE.xlsx');  
-                return workbook.xlsx.write(resp)
-                .then(function() {
-                      resp.status(200).end();
-                });
-        
+                        let header = [
+                            { header: 'APE', key: 'dc_structureprincipalede' },
+                            { header: "Nombre d'EFO", key: 'nbEFO' },
+                            { header: 'Nombre de DE avec EFO', key: 'nbDEEFO' },
+                            { header: 'Nombre de DE', key: 'nbDE' },
+                            { header: 'Taux DE avec EFO', key: 'tx' },
+                            
+                        ];
+                        
+                        return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
 
                     }
                 }
-            })
         })
-                
+    });
+})        
 
 //END
 

@@ -34,7 +34,8 @@ sql+=' FROM ('
     sql += ' ELSE "jalons"'
     sql += ' END AS textnbjouravantjalon,'
     sql += ' COUNT(dc_individu_local) AS nb'
-    sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    // sql += ' FROM T_Portefeuille INNER JOIN APE ON T_Portefeuille.dc_structureprincipalede = APE.id_ape'
+    sql += ' FROM T_Portefeuille'
     sql += ' WHERE dc_situationde = 2'
 
     //DR Admin
