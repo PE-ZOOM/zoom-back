@@ -13,7 +13,7 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
     const int1= [0,30];
     const int2= [int1[1] + 1, 60];
 
-    let sql = 'SELECT *,'
+    let sql = "SELECT *, DATE_FORMAT(datejalonintermediaire,'%d/%m/%Y') AS french_datejalon, "
     sql += ' CASE'
     sql += ' WHEN nbjouravantjalon IS NULL THEN "Sans Jalons"'
     sql += ' WHEN nbjouravantjalon < 0 THEN "Jalons dépassés"'
@@ -64,6 +64,8 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                             { header: 'Mail', key: 'dc_adresseemail'},
                             { header: 'Tel', key: 'dc_telephone'},
                             { header: 'Interval jalon', key: 'textnbjouravantjalon'},
+                            { header: 'Date Jalon intermédiaire', key: 'french_datejalon'}
+
                         ];
                         
                         return xls.CreateXls('IDE', header, jsonResult).xlsx.write(resp)

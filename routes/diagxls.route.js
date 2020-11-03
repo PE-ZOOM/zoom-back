@@ -63,7 +63,9 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                             { header: 'Catégorie', key: 'dc_categorie'},
                             { header: 'MSA', key: 'dc_parcours'},
                             { header: 'Mail', key: 'dc_adresseemail'},
-                            { header: 'Tel', key: 'dc_telephone'}
+                            { header: 'Tel', key: 'dc_telephone'},
+                            { header: 'ROME ORE', key: 'rome_ore'},
+                            { header: 'Libellé ROME ORE', key: 'dc_lblrome_ore'}
                         ];
                         
                         return xls.CreateXls('IDE', header, jsonResult, tab_filter).xlsx.write(resp)
