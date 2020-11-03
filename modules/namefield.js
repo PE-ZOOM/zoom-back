@@ -76,6 +76,8 @@ module.exports = {
     case "nom_ref" : return "Nom du référent"
     case "dc_agentreferent" : return "Référent affecté"
     case "libelle_ape" : return "Libellé APE"
+    case "y1_carte_visite" : return "Carte de visite"
+    case "y2_nb_besoin_num" : return "Nombre de besoins numériques"
 
     default : console.log('missing') ;
      }

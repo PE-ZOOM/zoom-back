@@ -65,7 +65,9 @@ router.use('/ide', passport.authenticate('jwt', { session:  false }), (req,resp)
                             { header: 'Mail', key: 'dc_adresseemail'},
                             { header: 'Tel', key: 'dc_telephone'},
                             { header: 'ROME ORE', key: 'rome_ore'},
-                            { header: 'Libellé ROME ORE', key: 'dc_lblrome_ore'}
+                            { header: 'Libellé ROME ORE', key: 'dc_lblrome_ore'},
+                            { header: 'Structure suivi délégué', key: 'dc_structure_suivi_delegue'},
+                            { header: 'Type suivi délégué', key: 'dc_typesuividelegue'}
                         ];
                         
                         return xls.CreateXls('IDE', header, jsonResult, tab_filter).xlsx.write(resp)
