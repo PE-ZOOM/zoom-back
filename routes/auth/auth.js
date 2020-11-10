@@ -17,19 +17,20 @@ router.post('/signup', function(req, res, next) {
       if (error) throw err; // not connected!
 
       let sql = 'INSERT INTO User (idgasi, name, fonction_id, team_id, p_user, ape_id, password) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      conn.query(sql, [userValue], (err, result) => {
+      console.log(sql)
+      conn.query(sql, userValue, (err, result) => {
       // When done with the connection, release it.
         conn.release();
 
         // Handle error after the release.
         if (err){
           console.log(err)
-          return  resp.status(500).json({
+          return  res.status(500).json({
                     flash: err.message,
                     sql: err.sql,
                   });
         }else{
-          resp.status(201).json({ flash:  `User has been signed up !` })
+          res.status(201).json({ flash:  `User has been signed up !` })
         }
 
       // Don't use the connection here, it has been returned to the pool.
