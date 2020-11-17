@@ -77,7 +77,7 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
                             
                         ];
                         
-                        return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                        return xls.CreateXls('REF', header, jsonResult, tab_filter, [13,14]).xlsx.write(resp)
                         .then(function() {
                                 resp.status(200).end();
                         });
@@ -161,7 +161,7 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
                             
                         ];
                         
-                        return xls.CreateXls('APE', header, jsonResult, tab_filter).xlsx.write(resp)
+                        return xls.CreateXls('APE', header, jsonResult, tab_filter, [13,14]).xlsx.write(resp)
                         .then(function() {
                                 resp.status(200).end();
                         });
@@ -247,7 +247,7 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
                                 { header: 'Tx prestation', key: 'tx_prestation'}                
                             ];
                             
-                            return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                            return xls.CreateXls('REF', header, jsonResult, tab_filter, [14]).xlsx.write(resp)
                             .then(function() {
                                     resp.status(200).end();
                             });
@@ -337,7 +337,7 @@ console.log(sqlValues)
                                 
                             ];
                             
-                            return xls.CreateXls('APE', header, jsonResult, tab_filter).xlsx.write(resp)
+                            return xls.CreateXls('APE', header, jsonResult, tab_filter, [14]).xlsx.write(resp)
                             .then(function() {
                                     resp.status(200).end();
                             });
