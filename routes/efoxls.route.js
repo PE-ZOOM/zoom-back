@@ -260,7 +260,7 @@ router.use('/ref', passport.authenticate('jwt', { session:  false }), (req,resp)
                             
                         ];
                         
-                        return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                        return xls.CreateXls('REF', header, jsonResult, tab_filter, [5]).xlsx.write(resp)
                             .then(function() {
                                     resp.status(200).end();
                             });
@@ -419,7 +419,7 @@ router.use('/ape', passport.authenticate('jwt', { session:  false }), (req,resp)
                             
                         ];
                         
-                        return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
+                        return xls.CreateXls('REF', header, jsonResult, tab_filter, [5]).xlsx.write(resp)
                             .then(function() {
                                     resp.status(200).end();
                             });

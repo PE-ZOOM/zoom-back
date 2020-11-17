@@ -9,9 +9,10 @@ module.exports = {
         header      = tableau d'objet entête [{name : ..., key : ...}, {name : ..., key : ...}]
         data  = résultat de la requête SQL
         filter  = filtre utilisé (Si pas de filtre, MyTable commence en 'A1')
+        prct = Int numéro de la colonne à mettre en %, pour ne rien mettre en %, ne rien mettre à la place de prct
 
     */
-    CreateXls: function (wsName, header, data, filter){
+    CreateXls: function (wsName, header, data, filter, prct){
 
         let workbook = new excel.Workbook(); //creating workbook
         let worksheet = workbook.addWorksheet(wsName,{views: [{showGridLines: false}]}); //creating worksheet
@@ -67,10 +68,21 @@ module.exports = {
             columns: tab_header,
             rows: rows,
         });
-        
+
         for(i in tab_header){
             worksheet.getColumn(parseInt(i)+1).width = 15;
         } 
+        if(typeof(prct)=='object')
+            {
+                prct.map((key) => {
+                   worksheet.getColumn(key).eachCell((cell) => {
+                        cell.numFmt = '0.0%';
+                    });
+                })
+                // worksheet.getColumn(parseInt(i)+1).eachCell((cell) => {
+                //     cell.numFmt = '0.0%';
+                // });
+            }
 
         worksheet.addRows(data);
 
