@@ -359,6 +359,7 @@ router.use('/taux/ape', passport.authenticate('jwt', { session:  false }), (req,
 
         let sql = "SELECT annee, mois, dc_structureprincipalesuivi, CONCAT(FORMAT(sum(presta) / Sum(nb_de_affectes) * 100, 1),'%') as tx_prestation, "
         sql += "CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DPAE, "
+        sql += "CONCAT(FORMAT(sum(formation) / Sum(nb_de_affectes) * 100, 1),'%') as tx_form, "
         sql += "CONCAT(FORMAT(sum(contact_entrant) / sum(nb_de_affectes) * 100, 1), '%') as tx_contact_entrant, "
         sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_contact_sortant "
         // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
@@ -411,6 +412,7 @@ router.use('/taux/ape', passport.authenticate('jwt', { session:  false }), (req,
                                 { header: 'Mois', key: 'mois' },
                                 { header: 'Structure principale', key: 'dc_structureprincipalesuivi'},
                                 { header: 'Avec prestation', key: 'tx_prestation'},
+                                { header: 'Avec formation', key: 'tx_form'},
                                 { header: 'Avec DPAE', key: 'tx_DPAE'},
                                 { header: 'Contact entrant', key: 'tx_contact_entrant'},
                                 { header: 'Contact sortant', key: 'tx_contact_sortant'},
@@ -440,6 +442,7 @@ router.use('/taux/ref', passport.authenticate('jwt', { session:  false }), (req,
 
     let sql = "SELECT annee, mois, nom_complet, CONCAT(FORMAT(sum(presta) / Sum(nb_de_affectes) * 100, 1),'%') as tx_prestation, "
         sql += "CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DPAE, "
+        sql += "CONCAT(FORMAT(sum(formation) / Sum(nb_de_affectes) * 100, 1),'%') as tx_form, "
         sql += "CONCAT(FORMAT(sum(contact_entrant) / sum(nb_de_affectes) * 100, 1), '%') as tx_contact_entrant, "
         sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_contact_sortant "
         // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
@@ -493,6 +496,7 @@ router.use('/taux/ref', passport.authenticate('jwt', { session:  false }), (req,
                                 { header: 'Nom', key: 'nom_complet'},
                                 { header: 'Avec prestation', key: 'tx_prestation'},
                                 { header: 'Avec DPAE', key: 'tx_DPAE'},
+                                { header: 'Avec formation', key: 'tx_form'},
                                 { header: 'Contact entrant', key: 'tx_contact_entrant'},
                                 { header: 'Contact sortant', key: 'tx_contact_sortant'},
                                 
