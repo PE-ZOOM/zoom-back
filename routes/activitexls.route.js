@@ -351,6 +351,166 @@ console.log(sqlValues)
 
 //END
 
+//select excel taux ape
+//http://localhost:5000/activitexlsx/presta/ape?
+router.use('/taux/ape', passport.authenticate('jwt', { session:  false }), (req,resp) => {
+
+    const query = req.query;
+
+        let sql = "SELECT annee, mois, dc_structureprincipalesuivi, CONCAT(FORMAT(sum(presta) / Sum(nb_de_affectes) * 100, 1),'%') as tx_prestation, "
+        sql += "CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DPAE, "
+        sql += "CONCAT(FORMAT(sum(contact_entrant) / sum(nb_de_affectes) * 100, 1), '%') as tx_contact_entrant, "
+        sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_contact_sortant "
+        // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    sql+=" FROM T_Activites"
+
+    let sqlValues = [];
+    let tab_filter = [];
+    let filter1by1 = '';
+    let libenclair = '';
+    
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        
+                if (index === 0) {
+                    sql += ` WHERE ${key} = ?`
+                }
+                else {
+                    sql += ` AND ${key} = ?`
+        
+                } 
+            sqlValues.push(query[key])
+            libenclair=namecol.namefield(key)
+            filter1by1=`${libenclair}=${query[key]}`
+            tab_filter.push(filter1by1);
+       
+        })
+    
+    sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee desc, mois desc, dc_structureprincipalesuivi desc"
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+
+            conn.query(sql, sqlValues, (err, results) => {
+
+                conn.release()
+
+                if (err) {
+                    resp.status(500).send('Internal server error')
+                } else {
+                    if (!results.length) {
+                        resp.status(404).send('datas not found')
+                    } else {
+                            const jsonResult = JSON.parse(JSON.stringify(results));
+
+                            resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                            resp.setHeader('Content-Disposition', 'attachment; filename=' + 'TauxApe.xlsx');  
+
+                            let header = [
+                                { header: 'Année', key: 'annee'},
+                                { header: 'Mois', key: 'mois' },
+                                { header: 'Structure principale', key: 'dc_structureprincipalesuivi'},
+                                { header: 'Avec prestation', key: 'tx_prestation'},
+                                { header: 'Avec DPAE', key: 'tx_DPAE'},
+                                { header: 'Contact entrant', key: 'tx_contact_entrant'},
+                                { header: 'Contact sortant', key: 'tx_contact_sortant'},
+                                
+                            ];
+                            
+                            return xls.CreateXls('APE', header, jsonResult, tab_filter, [14]).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
+
+                    }
+                }
+            })
+    });
+})
+
+
+// END
+
+
+//select excel presta ref
+//http://localhost:5000/activitexlsx/presta/ref?
+router.use('/taux/ref', passport.authenticate('jwt', { session:  false }), (req,resp) => {
+
+    const query = req.query;
+
+    let sql = "SELECT annee, mois, nom_complet, CONCAT(FORMAT(sum(presta) / Sum(nb_de_affectes) * 100, 1),'%') as tx_prestation, "
+        sql += "CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DPAE, "
+        sql += "CONCAT(FORMAT(sum(contact_entrant) / sum(nb_de_affectes) * 100, 1), '%') as tx_contact_entrant, "
+        sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_contact_sortant "
+        // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+    sql+=" FROM T_Activites"
+    
+    let sqlValues = [];
+    let tab_filter = [];
+    let filter1by1 = '';
+    let libenclair = '';
+    
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        
+            if (index === 0) {
+                sql += ` WHERE ${key} = ?`
+            }
+            else {
+                sql += ` AND ${key} = ?`
+    
+            } 
+            sqlValues.push(query[key])
+            libenclair=namecol.namefield(key)
+            filter1by1=`${libenclair}=${query[key]}`
+            tab_filter.push(filter1by1);
+        
+        })
+    
+    sql+= " GROUP BY annee, mois, nom_complet order by annee desc, mois desc, nom_complet"
+    
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+                    conn.release();
+
+                    if (err) {
+                        resp.status(500).send('Internal server error')
+                    } else {
+                        if (!results.length) {
+                            resp.status(404).send('datas not found')
+                        } else {
+                            const jsonResult = JSON.parse(JSON.stringify(results));
+
+                            resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                            resp.setHeader('Content-Disposition', 'attachment; filename=' + 'TauxRef.xlsx');  
+
+                            let header = [
+                                { header: 'Année', key: 'annee'},
+                                { header: 'Mois', key: 'mois' },
+                                { header: 'Nom', key: 'nom_complet'},
+                                { header: 'Avec prestation', key: 'tx_prestation'},
+                                { header: 'Avec DPAE', key: 'tx_DPAE'},
+                                { header: 'Contact entrant', key: 'tx_contact_entrant'},
+                                { header: 'Contact sortant', key: 'tx_contact_sortant'},
+                                
+                            ];
+                            
+                            return xls.CreateXls('REF', header, jsonResult, tab_filter, [14]).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
+                
+                        }
+                    }
+            })
+    });
+})
+                
+
+//END
 
 
 module.exports = router;
