@@ -160,23 +160,21 @@ router.get('/listeyear', passport.authenticate('jwt', { session:  false }), (req
 router.get('/listeref', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
   const query = req.query;
 
-  let sql = 'SELECT DISTINCT nom_complet'
-      // sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
-      sql+= ' FROM T_Activites'
+  
+  let sql = 'SELECT DISTINCT a.nom_complet FROM T_Activites a INNER JOIN'
+      sql+= ' (SELECT MAX(annee) as maxannee, MAX(mois) as maxmois FROM T_Activites) as x on '
+      sql+= ' x.maxannee=a.annee and x.maxmois=a.mois '
+      sql+= ' WHERE a.nb_de_affectes>20 '
       
       let sqlValues = [];
 
       Object.keys(query).map((key, index) => {
-          if (index === 0) {
-              sql += ` WHERE ${key} = ?`
-          }
-          else {
-              sql += ` AND ${key} = ?`
+          
+              sql += ` AND a.${key} = ?`
   
-          } 
           sqlValues.push(query[key]) 
       })
-      sql+= " ORDER BY SUBSTRING(nom_complet, 10)"
+      sql+= " ORDER BY SUBSTRING(a.nom_complet, 10)"
      
 
   connection_pool.getConnection(function(error, conn) {
