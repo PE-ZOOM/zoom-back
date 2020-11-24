@@ -72,8 +72,8 @@ router.use('/contacts/ref', passport.authenticate('jwt', { session:  false }), (
                             { header: 'entretien dmc', key: 'entretien_dmc'},
                             { header: 'mailnet entrant', key: 'mailnet_entrant'},
                             { header: 'mailnet sortant', key: 'mailnet_sortant'},
-                            { header: 'tx contact entrant', key: 'tx_contact_entrant'},
-                            { header: 'tx contact sortant', key: 'tx_contact_sortant'}
+                            { header: 'Tx DE avec contact entrant', key: 'tx_contact_entrant'},
+                            { header: 'Tx DE avec contact sortant', key: 'tx_contact_sortant'}
                             
                         ];
                         
@@ -156,8 +156,8 @@ router.use('/contacts/ape', passport.authenticate('jwt', { session:  false }), (
                             { header: 'entretien dmc', key: 'entretien_dmc'},
                             { header: 'mailnet entrant', key: 'mailnet_entrant'},
                             { header: 'mailnet sortant', key: 'mailnet_sortant'},
-                            { header: 'tx contact entrant', key: 'tx_contact_entrant'},
-                            { header: 'tx contact sortant', key: 'tx_contact_sortant'}
+                            { header: 'Tx DE avec contact entrant', key: 'tx_contact_entrant'},
+                            { header: 'Tx DE avec contact sortant', key: 'tx_contact_sortant'}
                             
                         ];
                         
@@ -243,8 +243,8 @@ router.use('/presta/ref', passport.authenticate('jwt', { session:  false }), (re
                                 { header: 'Vers1métier', key: 'Vers1métier'},
                                 { header: 'ACL', key: 'ACL'},
                                 { header: 'EMD', key: 'EMD'},
-                                { header: 'Presta', key: 'Presta'},
-                                { header: 'Tx prestation', key: 'tx_prestation'}                
+                                { header: 'Nombre DE avec presta', key: 'Presta'},
+                                { header: 'Tx DE avec presta', key: 'tx_prestation'}                
                             ];
                             
                             return xls.CreateXls('REF', header, jsonResult, tab_filter).xlsx.write(resp)
@@ -332,8 +332,8 @@ console.log(sqlValues)
                                 { header: 'Vers1métier', key: 'Vers1métier'},
                                 { header: 'ACL', key: 'ACL'},
                                 { header: 'EMD', key: 'EMD'},
-                                { header: 'Presta', key: 'Presta'},
-                                { header: 'Tx prestation', key: 'tx_prestation'} 
+                                { header: 'Nombre DE avec presta', key: 'Presta'},
+                                { header: 'Tx DE avec presta', key: 'tx_prestation'} 
                                 
                             ];
                             

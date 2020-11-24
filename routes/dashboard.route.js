@@ -117,8 +117,8 @@ router.get('/efo', passport.authenticate('jwt', { session:  false }), (req,resp)
 // dashboard ORE
 router.get('/ore', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
   let fieldValue = ''
-  let sql = 'SELECT CONCAT("ORE A VALIDER ", c_top_oreavalider_id)  as lbl, COUNT(c_top_oreavalider_id) as nb FROM T_Portefeuille'
-   sql += ' WHERE dc_situationde = 2'
+  let sql = 'SELECT CONCAT("ORE A CONTRACTUALISER ", c_top_oreavalider_id) as lbl, COUNT(c_top_oreavalider_id) as nb FROM T_Portefeuille'
+      sql += " WHERE dc_situationde = 2 "
     
   //Conseiller
     //http://localhost:5000/count/efo?dc_dernieragentreferent=P000617 - XXXX
