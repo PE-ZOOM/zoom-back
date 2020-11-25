@@ -550,6 +550,7 @@ router.get('/historic', passport.authenticate('jwt', { session:  false }), (req,
 router.get('/historicBubble', (req, resp) => {
 
   // let sql = 'SELECT MONTH(date) AS mois, button AS BT, COUNT(*) as NB FROM historic GROUP BY mois, BT '
+  let sqlValues = []
 
   let sql = 'SELECT a.mois, '
     sql += 'a.Contacts, p.ContactsPersonne,'
@@ -557,6 +558,7 @@ router.get('/historicBubble', (req, resp) => {
     sql += 'a.EFO, p.EFOPersonne,'
     sql += 'a.Jalons, p.JalonsPersonne,'
     sql += 'a.Taux, p.TauxPersonne,'
+    sql += 'a.DPAE_MEC, p.DPAE_MECPersonne,'
     sql += 'a.Prestations, p.PrestationsPersonne FROM '
     sql += ' ('
     sql += '    SELECT c.mois,'
@@ -565,6 +567,7 @@ router.get('/historicBubble', (req, resp) => {
     sql += '        CASE WHEN y.EFO IS NULL THEN 0 ELSE y.EFO END "EFO", '
     sql += '        CASE WHEN y.Jalons IS NULL THEN 0 ELSE y.Jalons END "Jalons", '
     sql += '        CASE WHEN y.Taux IS NULL THEN 0 ELSE y.Taux END "Taux", '
+    sql += '        CASE WHEN y.DPAE_MEC IS NULL THEN 0 ELSE y.DPAE_MEC END "DPAE_MEC", '
     sql += '        CASE WHEN y.Prestations IS NULL THEN 0 ELSE y.Prestations END "Prestations"'
     sql += '    FROM '
     sql += '    ('
@@ -574,12 +577,24 @@ router.get('/historicBubble', (req, resp) => {
     sql += '              MAX(CASE WHEN x.button = "EFO" THEN x.nbclic ELSE 0 END) "EFO",'
     sql += '             MAX(CASE WHEN x.button = "Jalons" THEN x.nbclic ELSE 0 END) "Jalons",'
     sql += '             MAX(CASE WHEN x.button = "Taux" THEN x.nbclic ELSE 0 END) "Taux",'
+    sql += '             MAX(CASE WHEN x.button = "DPAE_MEC" THEN x.nbclic ELSE 0 END) "DPAE_MEC",'
     sql += '             MAX(CASE WHEN x.button = "Prestations" THEN x.nbclic ELSE 0 END) "Prestations"'
     sql += '         FROM'
     sql += '         ('
     sql += '              SELECT MONTH(date) as mois, button, count(id) as nbclic FROM historic '
     sql += '             WHERE idgasi NOT in ("icbl0540")'
-    sql += '             AND YEAR(date)=2020 '
+    // sql += '             AND YEAR(date)=2020 '
+
+                        Object.keys(req.query).filter((key) => req.query[key]!=='all').map((key) => {
+                          if(key==='annee'){
+                            sql += ` AND YEAR(date) = ? `      
+                            sqlValues.push(req.query[key])
+                          }else if(key==='champs'){
+                            sql += ` AND champs = ? `      
+                            sqlValues.push(req.query[key])
+                          }
+                        })
+
     sql += '             GROUP BY mois, button) x'
     sql += '             GROUP BY x.mois'
     sql += '         ) y '
@@ -602,6 +617,7 @@ router.get('/historicBubble', (req, resp) => {
     sql += '            CASE WHEN y.EFO IS NULL THEN 0 ELSE y.EFO END "EFOPersonne", '
     sql += '            CASE WHEN y.Jalons IS NULL THEN 0 ELSE y.Jalons END "JalonsPersonne", '
     sql += '            CASE WHEN y.Taux IS NULL THEN 0 ELSE y.Taux END "TauxPersonne", '
+    sql += '            CASE WHEN y.DPAE_MEC IS NULL THEN 0 ELSE y.Taux END "DPAE_MECPersonne", '
     sql += '            CASE WHEN y.Prestations IS NULL THEN 0 ELSE y.Prestations END "PrestationsPersonne"'
     sql += '        FROM '
     sql += '        ('
@@ -611,12 +627,24 @@ router.get('/historicBubble', (req, resp) => {
     sql += '              MAX(CASE WHEN x.button = "EFO" THEN x.nbclic ELSE 0 END) "EFO",'
     sql += '              MAX(CASE WHEN x.button = "Jalons" THEN x.nbclic ELSE 0 END) "Jalons",'
     sql += '              MAX(CASE WHEN x.button = "Taux" THEN x.nbclic ELSE 0 END) "Taux",'
+    sql += '              MAX(CASE WHEN x.button = "DPAE_MEC" THEN x.nbclic ELSE 0 END) "DPAE_MEC",'
     sql += '              MAX(CASE WHEN x.button = "Prestations" THEN x.nbclic ELSE 0 END) "Prestations"'
     sql += '          FROM'
     sql += '          ('
     sql += '              SELECT MONTH(date) as mois, button, count(DISTINCT(idgasi)) as nbclic FROM historic '
     sql += '              WHERE idgasi NOT in ("icbl0540")'
-    sql += '              AND YEAR(date)=2020 '
+    // sql += '              AND YEAR(date)=2020 '
+
+                          Object.keys(req.query).filter((key) => req.query[key]!=='all').map((key) => {
+                            if(key==='annee'){
+                              sql += ` AND YEAR(date) = ? `      
+                              sqlValues.push(req.query[key])
+                            }else if(key==='champs'){
+                              sql += ` AND champs = ? `      
+                              sqlValues.push(req.query[key])
+                            }
+                          })
+
     sql += '              GROUP BY mois, button) x'
     sql += '              GROUP BY x.mois'
     sql += '           ) y RIGHT JOIN historic_calc c on c.mois= y.mois'
@@ -629,17 +657,6 @@ router.get('/historicBubble', (req, resp) => {
     sql += '             WHERE YEAR(date)=2020'
     sql += '           ) ' 
     sql += '     ) p ON p.mois = a.mois '
-
-    let sqlValues = []
-    //   Object.keys(req.query).filter((key) => req.query[key]!=='all').map((key) => {
-    //     if(key==='annee'){
-    //       sql += ` AND YEAR(date) = ? `      
-    //       sqlValues.push(req.query[key])
-    //     }else if(key==='champs'){
-    //       sql += ` AND champs = ? `      
-    //       sqlValues.push(req.query[key])
-    //     }
-    //   })
 
     // sql += '       AND champs="APE L\'EPERON" '
     // sql += '       GROUP BY mois, button'
@@ -686,60 +703,20 @@ router.get('/historicBubble', (req, resp) => {
 
 
 
-router.get('/historicNbPersonne', (req, resp) => {
+router.get('/historicTopPersonne', (req, resp) => {
 
-  // let sql = 'SELECT MONTH(date) AS mois, button AS BT, COUNT(*) as NB FROM historic GROUP BY mois, BT '
-
-  let sql = ' SELECT c.mois,'
-    sql += '   CASE WHEN y.Contacts IS NULL THEN 0 ELSE y.Contacts END "Contacts", '
-    sql += '   CASE WHEN y.Diagnostic IS NULL THEN 0 ELSE y.Diagnostic END "Diagnostic", '
-    sql += '   CASE WHEN y.EFO IS NULL THEN 0 ELSE y.EFO END "EFO", '
-    sql += '   CASE WHEN y.Jalons IS NULL THEN 0 ELSE y.Jalons END "Jalons", '
-    sql += '   CASE WHEN y.Prestations IS NULL THEN 0 ELSE y.Prestations END "Prestations"'
-    sql += ' FROM '
-    sql += ' ('
-    sql += '   SELECT x.mois,'
-    sql += '     MAX(CASE WHEN x.button = "Contacts" THEN x.nbclic ELSE 0 END) "Contacts",'
-    sql += '     MAX(CASE WHEN x.button = "Diagnostic" THEN x.nbclic ELSE 0 END) "Diagnostic",'
-    sql += '     MAX(CASE WHEN x.button = "EFO" THEN x.nbclic ELSE 0 END) "EFO",'
-    sql += '     MAX(CASE WHEN x.button = "Jalons" THEN x.nbclic ELSE 0 END) "Jalons",'
-    sql += '     MAX(CASE WHEN x.button = "Prestations" THEN x.nbclic ELSE 0 END) "Prestations"'
-    sql += '   FROM'
-    sql += '   ('
-    sql += '     SELECT MONTH(date) as mois, button, count(DISTINCT(idgasi)) as nbclic FROM historic WHERE '
-    sql += '       idgasi NOT in ("icbl0540", "irle5360", "admin")' // Liste des noms à enlever (DPR)
-    // sql += '       AND YEAR(date)=2020 '
-
-    let sqlValues = []
-      Object.keys(req.query).filter((key) => req.query[key]!=='all').map((key) => {
-        if(key==='annee'){
-          sql += ` AND YEAR(date) = ? `      
-          sqlValues.push(req.query[key])
-        }else if(key==='champs'){
-          sql += ` AND champs = ? `      
-          sqlValues.push(req.query[key])
-        }
-      })
-
-    // sql += '       AND champs="APE L\'EPERON" '
-    sql += '       GROUP BY mois, button'
-    sql += '   ) x'
-    sql += '   GROUP BY x.mois'
-    sql += ' ) y RIGHT JOIN historic_calc c on c.mois= y.mois'
-    sql += '   WHERE c.mois <= ('
-    sql += '                     SELECT MAX(MONTH(date)) FROM historic '
-    sql += '                     WHERE YEAR(date)=2020'
-    sql += '                   ) '
-    sql += '  AND c.mois >= ('
-    sql += '                     SELECT MIN(MONTH(date)) FROM historic '
-    sql += '                     WHERE YEAR(date)=2020'
-    sql += '                   ) ' 
+  let sql = 'SELECT name, count(h.idgasi) as compte '
+      sql += 'FROM historic h '
+      sql += 'INNER JOIN user u ON h.idgasi = u.idgasi '
+      sql += 'WHERE h.idgasi NOT in ("icbl0540", "a", "zz","to") '
+      sql += 'GROUP BY name '
+      sql += 'ORDER BY compte DESC LIMIT 3'
 
   connection_pool.getConnection(function(error, conn) {
     if (error) throw err; // not connected!
 
     // Use the connection
-    conn.query(sql, sqlValues, (err, result) => {
+    conn.query(sql, (err, result) => {
       // When done with the connection, release it.
       conn.release();
 
