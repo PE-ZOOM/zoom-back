@@ -297,8 +297,6 @@ router.use('/presta/ape', passport.authenticate('jwt', { session:  false }), (re
     
     sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee, mois, dc_structureprincipalesuivi desc"
     
-console.log(sql)
-console.log(sqlValues)
 
     connection_pool.getConnection(function(error, conn) {
         if (error) throw err; // not connected!
@@ -351,8 +349,187 @@ console.log(sqlValues)
 
 //END
 
+//select excel dpa ref
+//http://localhost:5000/activitexlsx/dpae/ref?
+router.use('/dpae/ref', passport.authenticate('jwt', { session:  false }), (req,resp) => {
+
+    const query = req.query;
+
+    let sql ="SELECT annee , mois , nom_complet, "
+  sql += "  Sum(nb_de_affectes) AS nb_de_affectes, Sum(dpae) AS Nb_DE_avec_DPAE," 
+  sql += "  CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_DPAE,"
+  sql += "  Sum(mec) AS MEC, Sum(de_mec) AS Nb_DE_avec_MEC, CONCAT(FORMAT(sum(mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
+  sql += "  Sum(mer) AS MER, Sum(de_mer) AS Nb_DE_avec_MER, CONCAT(FORMAT(sum(mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
+  sql += "  Sum(merplus) AS 'MER+', Sum(de_merplus) AS 'Nb_DE_avec_MER+', CONCAT(FORMAT(sum(merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
+
+    sql+=" FROM T_Activites"
+    
+    let sqlValues = [];
+    let tab_filter = [];
+    let filter1by1 = '';
+    let libenclair = '';
+    
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        
+            if (index === 0) {
+                sql += ` WHERE ${key} = ?`
+            }
+            else {
+                sql += ` AND ${key} = ?`
+    
+            } 
+            sqlValues.push(query[key])
+            libenclair=namecol.namefield(key)
+            filter1by1=`${libenclair}=${query[key]}`
+            tab_filter.push(filter1by1);
+        
+        })
+    
+    sql+= " GROUP BY annee, mois, nom_complet order by annee, mois, nom_complet desc"
+    
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+
+        conn.query(sql, sqlValues, (err, results) => {
+
+                    conn.release();
+
+                    if (err) {
+                        resp.status(500).send('Internal server error')
+                    } else {
+                        if (!results.length) {
+                            resp.status(404).send('datas not found')
+                        } else {
+                            const jsonResult = JSON.parse(JSON.stringify(results));
+
+                            resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                            resp.setHeader('Content-Disposition', 'attachment; filename=' + 'PrestaRef.xlsx');  
+
+                            let header = [
+                                { header: 'Année', key: 'annee'},
+                                { header: 'Mois', key: 'mois'},
+                                { header: 'Référent', key: 'nom_complet'},
+                                { header: 'Nb DE affectes', key: 'nb_de_affectes'},
+                                { header: 'Nb DE avec DPAE', key: 'Nb_DE_avec_DPAE'},
+                                { header: 'Tx DE avec DPAE', key: 'tx_DE_avec_DPAE'},
+                                { header: 'MEC', key: 'MEC'},
+                                { header: 'Nb DE avec MEC', key: 'Nb_DE_avec_MEC'},
+                                { header: 'Tx DE avec MEC', key: 'tx_DE_avec_MEC'},
+                                { header: 'MER', key: 'MER'},
+                                { header: 'Nb DE avec MER', key: 'Nb_DE_avec_MER'},
+                                { header: 'Tx DE avec MER', key: 'tx_DE_avec_MER'},
+                                { header: 'MER+', key: 'MER+'},
+                                { header: 'Nb DE avec MER+', key: 'Nb_DE_avec_MER+'},
+                                { header: 'Tx DE avec MER+', key: 'tx_DE_avec_MER+'}
+                                             
+                            ];
+                            
+                            return xls.CreateXls('REF', header, jsonResult, tab_filter, [6,9,12,15]).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
+                
+                        }
+                    }
+            })
+    });
+})
+                
+
+//END
+
+//select excel dpae ape
+//http://localhost:5000/activitexlsx/dpae/ape?
+router.use('/dpae/ape', passport.authenticate('jwt', { session:  false }), (req,resp) => {
+
+    const query = req.query;
+
+    let sql ="SELECT annee , mois , dc_structureprincipalesuivi, "
+    sql += "  Sum(nb_de_affectes) AS nb_de_affectes, Sum(dpae) AS Nb_DE_avec_DPAE," 
+    sql += "  CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_DPAE,"
+    sql += "  Sum(mec) AS MEC, Sum(de_mec) AS Nb_DE_avec_MEC, CONCAT(FORMAT(sum(mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
+    sql += "  Sum(mer) AS MER, Sum(de_mer) AS Nb_DE_avec_MER, CONCAT(FORMAT(sum(mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
+    sql += "  Sum(merplus) AS 'MER+', Sum(de_merplus) AS 'Nb_DE_avec_MER+', CONCAT(FORMAT(sum(merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
+    sql+=" FROM T_Activites"
+
+    let sqlValues = [];
+    let tab_filter = [];
+    let filter1by1 = '';
+    let libenclair = '';
+    
+    Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+        
+                if (index === 0) {
+                    sql += ` WHERE ${key} = ?`
+                }
+                else {
+                    sql += ` AND ${key} = ?`
+        
+                } 
+            sqlValues.push(query[key])
+            libenclair=namecol.namefield(key)
+            filter1by1=`${libenclair}=${query[key]}`
+            tab_filter.push(filter1by1);
+       
+        })
+    
+    sql+= " GROUP BY annee, mois, dc_structureprincipalesuivi order by annee, mois, dc_structureprincipalesuivi desc"
+    
+
+    connection_pool.getConnection(function(error, conn) {
+        if (error) throw err; // not connected!
+
+
+            conn.query(sql, sqlValues, (err, results) => {
+
+                conn.release()
+
+                if (err) {
+                    resp.status(500).send('Internal server error')
+                } else {
+                    if (!results.length) {
+                        resp.status(404).send('datas not found')
+                    } else {
+                            const jsonResult = JSON.parse(JSON.stringify(results));
+
+                            resp.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                            resp.setHeader('Content-Disposition', 'attachment; filename=' + 'PrestaApe.xlsx');  
+
+                            let header = [
+                                { header: 'Année', key: 'annee'},
+                                { header: 'Mois', key: 'mois' },
+                                { header: 'APE', key: 'dc_structureprincipalesuivi'},
+                                { header: 'Nb DE affectes', key: 'nb_de_affectes'},
+                                { header: 'Nb DE avec DPAE', key: 'Nb_DE_avec_DPAE'},
+                                { header: 'Tx DE avec DPAE', key: 'tx_DE_avec_DPAE'},
+                                { header: 'MEC', key: 'MEC'},
+                                { header: 'Nb DE avec MEC', key: 'Nb_DE_avec_MEC'},
+                                { header: 'Tx DE avec MEC', key: 'tx_DE_avec_MEC'},
+                                { header: 'MER', key: 'MER'},
+                                { header: 'Nb DE avec MER', key: 'Nb_DE_avec_MER'},
+                                { header: 'Tx DE avec MER', key: 'tx_DE_avec_MER'},
+                                { header: 'MER+', key: 'MER+'},
+                                { header: 'Nb DE avec MER+', key: 'Nb_DE_avec_MER+'},
+                                { header: 'Tx DE avec MER+', key: 'tx_DE_avec_MER+'}
+                            ];
+                            
+                            return xls.CreateXls('APE', header, jsonResult, tab_filter, [6,9,12,15]).xlsx.write(resp)
+                            .then(function() {
+                                    resp.status(200).end();
+                            });
+
+                    }
+                }
+            })
+    });
+})
+                
+
+//END
+
 //select excel taux ape
-//http://localhost:5000/activitexlsx/presta/ape?
+//http://localhost:5000/activitexlsx/taux/ape?
 router.use('/taux/ape', passport.authenticate('jwt', { session:  false }), (req,resp) => {
 
     const query = req.query;
@@ -361,7 +538,10 @@ router.use('/taux/ape', passport.authenticate('jwt', { session:  false }), (req,
         sql += "CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DPAE, "
         sql += "CONCAT(FORMAT(sum(formation) / Sum(nb_de_affectes) * 100, 1),'%') as tx_form, "
         sql += "CONCAT(FORMAT(sum(contact_entrant) / sum(nb_de_affectes) * 100, 1), '%') as tx_contact_entrant, "
-        sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_contact_sortant "
+        sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_contact_sortant, "
+        sql += "CONCAT(FORMAT(sum(mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
+        sql += "CONCAT(FORMAT(sum(mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
+        sql += "CONCAT(FORMAT(sum(merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
         // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
     sql+=" FROM T_Activites"
 
@@ -411,12 +591,15 @@ router.use('/taux/ape', passport.authenticate('jwt', { session:  false }), (req,
                                 { header: 'Année', key: 'annee'},
                                 { header: 'Mois', key: 'mois' },
                                 { header: 'Structure principale', key: 'dc_structureprincipalesuivi'},
-                                { header: 'Avec prestation', key: 'tx_prestation'},
-                                { header: 'Avec formation', key: 'tx_form'},
-                                { header: 'Avec DPAE', key: 'tx_DPAE'},
-                                { header: 'Contact entrant', key: 'tx_contact_entrant'},
-                                { header: 'Contact sortant', key: 'tx_contact_sortant'},
-                                
+                                { header: 'Tx DE avec prestation', key: 'tx_prestation'},
+                                { header: 'Tx DE avec formation', key: 'tx_form'},
+                                { header: 'Tx DE avec DPAE', key: 'tx_DPAE'},
+                                { header: 'Tx DE avec contact entrant', key: 'tx_contact_entrant'},
+                                { header: 'Tx DE avec contact sortant', key: 'tx_contact_sortant'},
+                                { header: 'Tx DE avec MEC', key: 'tx_DE_avec_MEC'},
+                                { header: 'Tx DE avec MER', key: 'tx_DE_avec_MER'},
+                                { header: 'Tx DE avec MER+', key: 'tx_DE_avec_MER+'}
+                               
                             ];
                             
                             return xls.CreateXls('APE', header, jsonResult, tab_filter, [14]).xlsx.write(resp)
@@ -434,8 +617,8 @@ router.use('/taux/ape', passport.authenticate('jwt', { session:  false }), (req,
 // END
 
 
-//select excel presta ref
-//http://localhost:5000/activitexlsx/presta/ref?
+//select excel taux ref
+//http://localhost:5000/activitexlsx/taux/ref?
 router.use('/taux/ref', passport.authenticate('jwt', { session:  false }), (req,resp) => {
 
     const query = req.query;
@@ -444,7 +627,10 @@ router.use('/taux/ref', passport.authenticate('jwt', { session:  false }), (req,
         sql += "CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DPAE, "
         sql += "CONCAT(FORMAT(sum(formation) / Sum(nb_de_affectes) * 100, 1),'%') as tx_form, "
         sql += "CONCAT(FORMAT(sum(contact_entrant) / sum(nb_de_affectes) * 100, 1), '%') as tx_contact_entrant, "
-        sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_contact_sortant "
+        sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_contact_sortant, "
+        sql += "CONCAT(FORMAT(sum(mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
+        sql += "CONCAT(FORMAT(sum(mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
+        sql += "CONCAT(FORMAT(sum(merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
         // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
     sql+=" FROM T_Activites"
     
@@ -494,11 +680,14 @@ router.use('/taux/ref', passport.authenticate('jwt', { session:  false }), (req,
                                 { header: 'Année', key: 'annee'},
                                 { header: 'Mois', key: 'mois' },
                                 { header: 'Nom', key: 'nom_complet'},
-                                { header: 'Avec prestation', key: 'tx_prestation'},
-                                { header: 'Avec DPAE', key: 'tx_DPAE'},
-                                { header: 'Avec formation', key: 'tx_form'},
-                                { header: 'Contact entrant', key: 'tx_contact_entrant'},
-                                { header: 'Contact sortant', key: 'tx_contact_sortant'},
+                                { header: 'Tx DE avec prestation', key: 'tx_prestation'},
+                                { header: 'Tx DE avec DPAE', key: 'tx_DPAE'},
+                                { header: 'Tx DE avec formation', key: 'tx_form'},
+                                { header: 'Tx DE avec contact entrant', key: 'tx_contact_entrant'},
+                                { header: 'Tx DE avec contact sortant', key: 'tx_contact_sortant'},
+                                { header: 'Tx DE avec MEC', key: 'tx_DE_avec_MEC'},
+                                { header: 'Tx DE avec MER', key: 'tx_DE_avec_MER'},
+                                { header: 'Tx DE avec MER+', key: 'tx_DE_avec_MER+'}
                                 
                             ];
                             
