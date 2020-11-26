@@ -15,7 +15,7 @@ router.post('/mdp', function(req, res) {
       if (error) throw err; // not connected!
       let sql = 'UPDATE `user` SET `password`=? WHERE idgasi=?'
       // let sql = 'INSERT INTO User (idgasi, name, fonction_id, team_id, p_user, ape_id, password) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      console.log(sql)
+
       conn.query(sql, userValue, (err, result) => {
       // When done with the connection, release it.
         conn.release();
@@ -53,7 +53,8 @@ router.post('/signup', function(req, res, next) {
       if (error) throw err; // not connected!
 
       let sql = 'INSERT INTO User (idgasi, name, fonction_id, team_id, p_user, ape_id, password) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      console.log(sql)
+     
+      
       conn.query(sql, userValue, (err, result) => {
       // When done with the connection, release it.
         conn.release();
@@ -86,10 +87,56 @@ router.post('/signup', function(req, res, next) {
         //       });
   });
 
+   //loginAuto
+   router.post('/signinAuto', function(req, res) {
+  //   passport.authenticate('local',(err, user, info) => { 
+  //     if (err) {
+  //       return res.status(500).json({
+  //         flash: err.message,
+  //         sql: err.sql,
+  //       });
+  //     }
+  //     if (!user) return res.status(400).json({flash: info.message});  
+  //    req.user = user
+  //     const token = jwt.sign(JSON.stringify(user), 'coucou');  
+  //     return res.json({user, token, flash:  `User sign in!` }); 
+  // })(req, res);
+  connection_pool.getConnection(function(error, conn) {
+    if (error) throw err; // not connected!
+
+    let sql = 'SELECT idgasi , name, fonction, fonction_id, team, team_id, p_user, libelle_ape, ape_id, password ';
+      sql += 'from User INNER JOIN Fonction ON User.fonction_id = Fonction.id_fonction ';
+      sql += 'LEFT JOIN Team ON User.team_id = Team.id_team ';
+      sql += 'LEFT JOIN APE ON User.ape_id = APE.id_ape ';
+      sql += 'WHERE idgasi = ?';
+
+    // let sql = 'SELECT * FROM User WHERE idgasi = ?'
+    conn.query(sql, req.body.idgasi, (err, data) => {
+
+      conn.release();
+
+    // return connection.query('SELECT * FROM User WHERE idgasi = ?', idgasi, (err2, records) => {
+      if (err) {
+        return res.status(500).json({
+          error: err.message,
+          sql: err.sql,
+        });
+      }
+      const token = jwt.sign(JSON.stringify(data), 'coucou'); 
+      const user = data[0]; 
+      return res.status(200).json({user, token, flash:  `User updated!`});
+    });
+
+    // Don't use the connection here, it has been returned to the pool.
+   
+  });
+
+})
+
   //login
       router.post('/signin', function(req, res, next) {
         passport.authenticate('local',(err, user, info) => { 
-          console.log(user)
+          
           if (err) {
             return res.status(500).json({
               flash: err.message,
