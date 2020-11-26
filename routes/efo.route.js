@@ -219,32 +219,49 @@ router.get('/listeref', passport.authenticate('jwt', { session:  false }), (req,
 
  //camembert efo c o 
 router.get('/EFO_c_o', (req, resp) => {
-
-    let fieldValue='';
+  const query = req.query;
+  let sqlValues = [];
     let sql  = `SELECT COUNT(dc_statutaction_id) as Qte, dc_statutaction_id FROM T_EFO` 
         // sql += ` INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape` 
 
-    //Conseiller
-    if (req.query.dc_dernieragentreferent) {
-      fieldValue = req.query.dc_dernieragentreferent;
-      sql += ' WHERE dc_dernieragentreferent = ? ';
-    }
-    //ELP
-    if (req.query.dc_structureprincipalede) {
-      fieldValue = req.query.dc_structureprincipalede;
-      sql += ' WHERE dc_structureprincipalede = ? ';
-    }
-    //DTNE-DTSO
-    if (req.query.dt) {
-      fieldValue = req.query.dt;
-      sql += ' WHERE dt = ? ';
-    }
+        Object.keys(query).filter((key) => query[key]!=='all' && key!=='dc_statutaction_id').map((key, index) => {
+          //datepreconisation 
+          if (key==='dd_datepreconisation') {
+            if (index === 0) {
+                sql += ` WHERE ${key} > ? `
+            }
+            else {
+                sql += ` AND ${key} > ? `
+            } 
+          } 
+          else if (key==='dc_lblformacode') {
+            if (index === 0) {
+                sql += ` WHERE ${key} LIKE "%" ? "%"`
+            }
+            else {
+                sql += ` AND ${key} LIKE "%" ? "%"`
+            }
+          }   
+          else {
+         
+                                if (index === 0) {
+                                    sql += ` WHERE ${key} = ?`
+                                }
+                                else {
+                                    sql += ` AND ${key} = ?`
+                                }   
+                      } 
+                                     
+                sqlValues.push(query[key])
+            })
+
+
     sql += ` GROUP BY dc_statutaction_id`
 
     connection_pool.getConnection(function(error, conn) {
       if (error) throw err; // not connected!
 
-      conn.query(sql, [fieldValue], (err, result) => {
+      conn.query(sql, sqlValues, (err, result) => {
       // When done with the connection, release it.
         conn.release();
 
