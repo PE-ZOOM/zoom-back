@@ -160,23 +160,21 @@ router.get('/listeyear', passport.authenticate('jwt', { session:  false }), (req
 router.get('/listeref', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
   const query = req.query;
 
-  let sql = 'SELECT DISTINCT nom_complet'
-      // sql+= ' FROM T_EFO INNER JOIN APE ON T_EFO.dc_structureprincipalede = APE.id_ape'
-      sql+= ' FROM T_Activites'
+  
+  let sql = 'SELECT DISTINCT a.nom_complet FROM T_Activites a INNER JOIN'
+      sql+= ' (SELECT MAX(annee) as maxannee, MAX(mois) as maxmois FROM T_Activites) as x on '
+      sql+= ' x.maxannee=a.annee and x.maxmois=a.mois '
+      sql+= ' WHERE a.nb_de_affectes>20 '
       
       let sqlValues = [];
 
       Object.keys(query).map((key, index) => {
-          if (index === 0) {
-              sql += ` WHERE ${key} = ?`
-          }
-          else {
-              sql += ` AND ${key} = ?`
+          
+              sql += ` AND a.${key} = ?`
   
-          } 
           sqlValues.push(query[key]) 
       })
-      sql+= " ORDER BY SUBSTRING(nom_complet, 10)"
+      sql+= " ORDER BY SUBSTRING(a.nom_complet, 10)"
      
 
   connection_pool.getConnection(function(error, conn) {
@@ -422,6 +420,125 @@ router.get('/presta', passport.authenticate('jwt', { session:  false }), (req,re
     });
 })
 //END
+
+//dpae mec
+//http://localhost:5000/activites/dpae?
+router.get('/dpae', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+  const query = req.query;
+
+  let sql ="SELECT annee , mois , Sum(nb_de_affectes) AS nb_de_affectes, Sum(dpae) AS Nb_DE_avec_DPAE," 
+  sql += "  CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_DPAE,"
+  sql += "  Sum(mec) AS MEC, Sum(de_mec) AS Nb_DE_avec_MEC, CONCAT(FORMAT(sum(mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
+  sql += "  Sum(mer) AS MER, Sum(de_mer) AS Nb_DE_avec_MER, CONCAT(FORMAT(sum(mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
+  sql += "  Sum(merplus) AS 'MER+', Sum(de_merplus) AS 'Nb_DE_avec_MER+', CONCAT(FORMAT(sum(merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
+
+  // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+  sql+=" FROM T_Activites"
+  
+  let sqlValues = [];
+  
+  Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+      
+              if (index === 0) {
+                  sql += ` WHERE ${key} = ?`
+              }
+              else {
+                  sql += ` AND ${key} = ?`
+      
+              } 
+          
+          sqlValues.push(query[key])
+      })
+  
+  sql+= " GROUP BY annee, mois order by annee desc, mois desc"
+  
+  connection_pool.getConnection(function(error, conn) {
+    if (error) throw err; // not connected!
+
+    conn.query(sql, sqlValues, (err, result) => {
+    // When done with the connection, release it.
+      conn.release();
+
+      // Handle error after the release.
+      if (err){
+        console.log(err.sqlMessage)
+        return  resp.status(500).json({
+                err: "true", 
+                error: err.message,
+                errno: err.errno,
+                sql: err.sql,
+                });
+      }else{
+        resp.status(201).json(result)
+      }
+
+    // Don't use the connection here, it has been returned to the pool.
+    });   
+  });
+})
+//END
+
+//taux
+//http://localhost:5000/activites/taux?
+router.get('/taux', passport.authenticate('jwt', { session:  false }), (req,resp) =>{
+  const query = req.query;
+
+
+  
+  let sql = "SELECT annee, mois, CONCAT(FORMAT(sum(presta) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_prestation, "
+  sql += "CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_DPAE, "
+  sql += "CONCAT(FORMAT(sum(formation) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_formation, "
+      sql += "CONCAT(FORMAT(sum(contact_entrant) / sum(nb_de_affectes) * 100, 1), '%') as tx_DE_avec_contact_entrant, "
+      sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_contact_sortant, "
+      sql += "CONCAT(FORMAT(sum(mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
+      sql += "CONCAT(FORMAT(sum(mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
+      sql += "CONCAT(FORMAT(sum(merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
+      // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
+  sql+=" FROM T_Activites"
+  
+  let sqlValues = [];
+  
+  Object.keys(query).filter((key) => query[key]!=='all').map((key, index) => {
+      
+              if (index === 0) {
+                  sql += ` WHERE ${key} = ?`
+              }
+              else {
+                  sql += ` AND ${key} = ?`
+      
+              } 
+          
+          sqlValues.push(query[key])
+      })
+  
+  sql+= " GROUP BY annee, mois order by annee desc, mois desc"
+  
+  connection_pool.getConnection(function(error, conn) {
+    if (error) throw err; // not connected!
+
+    conn.query(sql, sqlValues, (err, result) => {
+    // When done with the connection, release it.
+      conn.release();
+
+      // Handle error after the release.
+      if (err){
+        console.log(err.sqlMessage)
+        return  resp.status(500).json({
+                err: "true", 
+                error: err.message,
+                errno: err.errno,
+                sql: err.sql,
+                });
+      }else{
+        resp.status(201).json(result)
+      }
+
+    // Don't use the connection here, it has been returned to the pool.
+    });   
+  });
+})
+//END
+
 
 
 module.exports = router;

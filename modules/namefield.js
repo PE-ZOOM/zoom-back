@@ -49,7 +49,7 @@ module.exports = {
     case "colonne136" : return "Le demandeur d'emploi exprime un besoin d'appui pour développer ses capacités d'insertion et de communication"
     case "colonne140" : return "Le demandeur d'emploi exprime un besoin d'appui pour surmonter des contraintes familiales"
     case "dc_lblaxetravailprincipal" : return "Axe de travail principal"
-    case "c_top_oreavalider_id" : return "ORE à valider"
+    case "c_top_oreavalider_id" : return "ORE à contractualiser"
     case "dc_parcours" : return "Modalité d'accompagnement"
     case "tranche_age" : return "Tranche d'âge"
     case "libelle_ape" : return "APE du DE"
