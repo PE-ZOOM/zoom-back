@@ -6,6 +6,42 @@ const bcrypt=require('bcryptjs');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 
+router.post('/mdp', function(req, res) {
+
+  const hash = bcrypt.hashSync(req.body.password, 10);
+  const userValue= [hash, req.body.idgasi]
+
+  connection_pool.getConnection(function(error, conn) {
+      if (error) throw err; // not connected!
+      let sql = 'UPDATE `user` SET `password`=? WHERE idgasi=?'
+      // let sql = 'INSERT INTO User (idgasi, name, fonction_id, team_id, p_user, ape_id, password) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      console.log(sql)
+      conn.query(sql, userValue, (err, result) => {
+      // When done with the connection, release it.
+        conn.release();
+
+        // Handle error after the release.
+        if (err){
+          console.log(err)
+          return  res.status(500).json({
+                    flash: err.message,
+                    sql: err.sql,
+                  });
+        }else{
+          res.status(201).json({ flash:  `Mot de passe modifié !` })
+        }
+
+      // Don't use the connection here, it has been returned to the pool.
+      });   
+    });
+  // return  res.status(201).json({
+  //                     flash: 'ok'
+  //                   });
+
+})
+
+
+
 //signup new user
 router.post('/signup', function(req, res, next) {
         
@@ -53,6 +89,7 @@ router.post('/signup', function(req, res, next) {
   //login
       router.post('/signin', function(req, res, next) {
         passport.authenticate('local',(err, user, info) => { 
+          console.log(user)
           if (err) {
             return res.status(500).json({
               flash: err.message,
