@@ -428,9 +428,9 @@ router.get('/dpae', passport.authenticate('jwt', { session:  false }), (req,resp
 
   let sql ="SELECT annee , mois , Sum(nb_de_affectes) AS nb_de_affectes, Sum(dpae) AS Nb_DE_avec_DPAE," 
   sql += "  CONCAT(FORMAT(sum(dpae) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_DPAE,"
-  sql += "  Sum(mec) AS MEC, Sum(de_mec) AS Nb_DE_avec_MEC, CONCAT(FORMAT(sum(mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
-  sql += "  Sum(mer) AS MER, Sum(de_mer) AS Nb_DE_avec_MER, CONCAT(FORMAT(sum(mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
-  sql += "  Sum(merplus) AS 'MER+', Sum(de_merplus) AS 'Nb_DE_avec_MER+', CONCAT(FORMAT(sum(merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
+  sql += "  Sum(mec) AS MEC, Sum(de_mec) AS Nb_DE_avec_MEC, CONCAT(FORMAT(sum(de_mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
+  sql += "  Sum(mer) AS MER, Sum(de_mer) AS Nb_DE_avec_MER, CONCAT(FORMAT(sum(de_mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
+  sql += "  Sum(merplus) AS 'MER+', Sum(de_merplus) AS 'Nb_DE_avec_MER+', CONCAT(FORMAT(sum(de_merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
 
   // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
   sql+=" FROM T_Activites"
@@ -490,9 +490,9 @@ router.get('/taux', passport.authenticate('jwt', { session:  false }), (req,resp
   sql += "CONCAT(FORMAT(sum(formation) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_formation, "
       sql += "CONCAT(FORMAT(sum(contact_entrant) / sum(nb_de_affectes) * 100, 1), '%') as tx_DE_avec_contact_entrant, "
       sql += "CONCAT(FORMAT(sum(contact_sortant) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_contact_sortant, "
-      sql += "CONCAT(FORMAT(sum(mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
-      sql += "CONCAT(FORMAT(sum(mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
-      sql += "CONCAT(FORMAT(sum(merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
+      sql += "CONCAT(FORMAT(sum(de_mec) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MEC,"
+      sql += "CONCAT(FORMAT(sum(de_mer) / Sum(nb_de_affectes) * 100, 1),'%') as tx_DE_avec_MER,"
+      sql += "CONCAT(FORMAT(sum(de_merplus) / Sum(nb_de_affectes) * 100, 1),'%') as 'tx_DE_avec_MER+'"
       // sql+=" FROM T_Activites INNER JOIN APE ON T_Activites.dc_structureprincipalesuivi = APE.id_ape"
   sql+=" FROM T_Activites"
   
